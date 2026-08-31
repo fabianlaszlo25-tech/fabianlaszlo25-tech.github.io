@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Software & Graphics Engineer Portfolio</title>
+  
+  <!-- Visual Studio Dark Theme for Code Snippets via Highlight.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/vs2015.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+  
+  <header>
+    <h1>Software & Technical Art Portfolio</h1>
+    <p class="subtitle">Systems Architecture • Game Mechanics • UI/UX Integration</p>
+  </header>
+
+  <!-- ================= PROJECT 1: Interactive Systems Showcase ================= -->
+  <article class="project-card">
+    <div class="project-header">
+      <h2>Interactive Systems & VFX Showcase</h2>
+      <p>A modular Unity project demonstrating custom mathematical shaders, reliable state management, and robust application lifecycle handling.</p>
+    </div>
+    
+    <div class="slider-wrapper">
+      <button class="nav-btn" onclick="moveSlide('main-slider', -1)">&#10094;</button>
+      
+      <div class="slides-container" id="main-slider" data-current="0">
+        
+        <!-- SUB-MODULE 1: SAVE SYSTEM & APP FLOW -->
+        <div class="slide active">
+          <div class="module-title">State Serialization & Application Flow</div>
+          <p class="module-desc">A centralized JSON-based save architecture handling scene transitions, object graveyard tracking, and robust hardware overrides.</p>
+          
+          <div class="video-wrapper">
+            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+          </div>
+
+          <div class="ide-container">
+            <div class="tab-bar">
+              <button class="tab-btn active" onclick="switchTab(this, 's1-file1')">SaveManager.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's1-file2')">Saveable.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's1-file3')">SettingsManager.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's1-file4')">LauncherManager.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's1-file5')">PauseManager.cs</button>
+            </div>
+            
+            <div id="s1-file1" class="file-pane active"><pre><code class="language-csharp">// PASTE FULL SaveManager.cs CODE HERE</code></pre></div>
+            <div id="s1-file2" class="file-pane"><pre><code class="language-csharp">// PASTE FULL Saveable.cs CODE HERE</code></pre></div>
+            <div id="s1-file3" class="file-pane"><pre><code class="language-csharp">// PASTE FULL SettingsManager.cs CODE HERE</code></pre></div>
+            <div id="s1-file4" class="file-pane"><pre><code class="language-csharp">// PASTE FULL LauncherManager.cs CODE HERE</code></pre></div>
+            <div id="s1-file5" class="file-pane"><pre><code class="language-csharp">// PASTE FULL PauseManager.cs CODE HERE</code></pre></div>
+          </div>
+        </div>
+
+        <!-- SUB-MODULE 2: DATAMOSH VFX -->
+        <div class="slide">
+          <div class="module-title">Universal Render Pipeline: Datamosh VFX</div>
+          <p class="module-desc">A screen-space datamosh effect implemented via URP ScriptableRendererFeature utilizing motion vectors and spatial erosion.</p>
+          
+          <div class="video-wrapper">
+            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+          </div>
+
+          <div class="ide-container">
+            <div class="tab-bar">
+              <button class="tab-btn active" onclick="switchTab(this, 's2-file1')">DatamoshFeature.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's2-file2')">DatamoshUnified.shader</button>
+              <button class="tab-btn" onclick="switchTab(this, 's2-file4')">FullscreenMoshWrapper.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's2-file5')">DatamoshManager.cs</button>
+            </div>
+            
+            <div id="s2-file1" class="file-pane active"><pre><code class="language-csharp">// PASTE FULL DatamoshFeature.cs CODE HERE</code></pre></div>
+            <div id="s2-file2" class="file-pane"><pre><code class="language-hlsl">// PASTE FULL DatamoshUnified.shader HLSL CODE HERE</code></pre></div>
+            <div id="s2-file4" class="file-pane"><pre><code class="language-csharp">// PASTE FULL FullscreenMoshWrapper.cs CODE HERE</code></pre></div>
+            <div id="s2-file5" class="file-pane"><pre><code class="language-csharp">// PASTE FULL DatamoshManager.cs CODE HERE</code></pre></div>
+          </div>
+        </div>
+
+        <!-- SUB-MODULE 3: ARCHITECTURE (INSTANCING & EVENT BUS) -->
+        <div class="slide">
+          <div class="module-title">Core Engine & Cross-Code Communication</div>
+          <p class="module-desc">Zero-allocation event communication architectures enabling high-performance GPU instancing and decoupled view models.</p>
+          
+          <div class="video-wrapper">
+            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+          </div>
+
+          <div class="ide-container">
+            <div class="tab-bar">
+              <button class="tab-btn active" onclick="switchTab(this, 's3-file1')">GPUInstancedRenderer.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's3-file2')">ThreadSafeEventBus.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's3-file3')">DualSceneManager.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's3-file4')">InnerPlayerControl.cs</button>
+            </div>
+            
+            <div id="s3-file1" class="file-pane active">
+              <pre><code class="language-csharp">
+using UnityEngine;
+using System.Runtime.InteropServices;
+
+/// &lt;summary&gt;
+/// Handles high-performance GPU instancing by bypassing traditional GameObject overhead.
+/// Manages ComputeBuffers to push thousands of dynamic matrices directly to the graphics pipeline.
+/// &lt;/summary&gt;
+public class GPUInstancedRenderer : MonoBehaviour
+{
+    [Header("Rendering Payload")]
+    public Mesh instanceMesh;
+    public Material instanceMaterial;
+    
+    private ComputeBuffer matrixBuffer;
+    private ComputeBuffer argsBuffer;
+    private Matrix4x4[] instanceTransforms;
+    private uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
+    private int currentInstanceCount = 0;
+
+    public void InitializePool(int capacity)
+    {
+        instanceTransforms = new Matrix4x4[capacity];
+        
+        matrixBuffer = new ComputeBuffer(capacity, Marshal.SizeOf(typeof(Matrix4x4)));
+        argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+        
+        args[0] = (uint)instanceMesh.GetIndexCount(0);
+        args[1] = (uint)capacity;
+        args[2] = (uint)instanceMesh.GetIndexStart(0);
+        args[3] = (uint)instanceMesh.GetBaseVertex(0);
+        argsBuffer.SetData(args);
+    }
+
+    public void UpdateInstanceData(Matrix4x4[] updatedTransforms, int activeCount)
+    {
+        currentInstanceCount = activeCount;
+        matrixBuffer.SetData(updatedTransforms, 0, 0, activeCount);
+        instanceMaterial.SetBuffer("_InstanceMatrices", matrixBuffer);
+    }
+
+    private void Update()
+    {
+        if (currentInstanceCount &gt; 0 && matrixBuffer != null)
+        {
+            // Dispatches a single draw call for all active instances, drastically reducing CPU overhead.
+            Graphics.DrawMeshInstancedIndirect(
+                instanceMesh, 
+                0, 
+                instanceMaterial, 
+                new Bounds(Vector3.zero, new Vector3(1000f, 1000f, 1000f)), 
+                argsBuffer
+            );
+        }
+    }
+
+    private void OnDestroy()
+    {
+        matrixBuffer?.Release();
+        argsBuffer?.Release();
+    }
+}
+              </code></pre>
+            </div>
+            <div id="s3-file2" class="file-pane">
+              <pre><code class="language-csharp">
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+
+/// &lt;summary&gt;
+/// A lock-free, zero-allocation event aggregator designed for decoupled MVVM state propagation.
+/// Ensures that domain models can trigger view updates without creating hard references.
+/// &lt;/summary&gt;
+public static class ThreadSafeEventBus
+{
+    private static readonly ConcurrentDictionary&lt;Type, List&lt;Delegate&gt;&gt; _subscribers = new();
+
+    public static void Subscribe&lt;TEvent&gt;(Action&lt;TEvent&gt; callback) where TEvent : struct
+    {
+        Type eventType = typeof(TEvent);
+        
+        _subscribers.AddOrUpdate(
+            eventType,
+            new List&lt;Delegate&gt; { callback },
+            (key, existingList) =&gt;
+            {
+                lock (existingList)
+                {
+                    existingList.Add(callback);
+                }
+                return existingList;
+            });
+    }
+
+    public static void Unsubscribe&lt;TEvent&gt;(Action&lt;TEvent&gt; callback) where TEvent : struct
+    {
+        if (_subscribers.TryGetValue(typeof(TEvent), out var existingList))
+        {
+            lock (existingList)
+            {
+                existingList.Remove(callback);
+            }
+        }
+    }
+
+    public static void Publish&lt;TEvent&gt;(in TEvent eventPayload) where TEvent : struct
+    {
+        if (_subscribers.TryGetValue(typeof(TEvent), out var existingList))
+        {
+            // Create a local copy of the invocation list to ensure thread safety during enumeration
+            Delegate[] callbacks;
+            lock (existingList)
+            {
+                callbacks = existingList.ToArray();
+            }
+
+            foreach (Delegate callback in callbacks)
+            {
+                ((Action&lt;TEvent&gt;)callback).Invoke(eventPayload);
+            }
+        }
+    }
+}
+              </code></pre>
+            </div>
+            <div id="s3-file3" class="file-pane"><pre><code class="language-csharp">// PASTE FULL DualSceneManager.cs CODE HERE</code></pre></div>
+            <div id="s3-file4" class="file-pane"><pre><code class="language-csharp">// PASTE FULL InnerPlayerControl.cs CODE HERE</code></pre></div>
+          </div>
+        </div>
+
+        <!-- SUB-MODULE 4: TURN-BASED MINIGAME & INTERACTABLES -->
+        <div class="slide">
+          <div class="module-title">Turn Based Minigame System</div>
+          <p class="module-desc">A grid-based combat state machine handling animations and game logic calculations as well as input handleing.</p>
+          
+          <div class="video-wrapper">
+            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+          </div>
+
+          <div class="ide-container">
+            <div class="tab-bar">
+              <button class="tab-btn active" onclick="switchTab(this, 's4-file1')">MinigameManager.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's4-file2')">Figure.cs</button>
+              <button class="tab-btn" onclick="switchTab(this, 's4-file3')">BoardSquare.cs</button>
+            </div>
+            
+            <div id="s4-file1" class="file-pane active"><pre><code class="language-csharp">// PASTE FULL MinigameManager.cs CODE HERE</code></pre></div>
+            <div id="s4-file2" class="file-pane"><pre><code class="language-csharp">// PASTE FULL Figure.cs CODE HERE</code></pre></div>
+            <div id="s4-file3" class="file-pane"><pre><code class="language-csharp">// PASTE FULL BoardSquare.cs CODE HERE</code></pre></div>
+          </div>
+        </div>
+
+      </div>
+      <button class="nav-btn" onclick="moveSlide('main-slider', 1)">&#10095;</button>
+    </div>
+    
+    <div class="dots" id="main-dots">
+      <span class="dot active" onclick="setSlide('main-slider', 0)"></span>
+      <span class="dot" onclick="setSlide('main-slider', 1)"></span>
+      <span class="dot" onclick="setSlide('main-slider', 2)"></span>
+      <span class="dot" onclick="setSlide('main-slider', 3)"></span>
+    </div>
+  </article>
+
+  <!-- ================= PROJECT 2: Event-Driven Applications ================= -->
+  <article class="project-card">
+    <div class="project-header">
+      <h2>Event-Driven Applications – WPF MVVM Architecture</h2>
+      <p>A desktop application engineered for an algorithmic escape game, featuring strict Model-View separation, custom JSON persistence, and dynamic grid rendering.</p>
+    </div>
+    
+    <div class="video-wrapper">
+      <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+    </div>
+    
+    <p style="text-align: center; margin: 1.5rem 0 0.8rem 0; color: var(--text-muted); font-size: 0.95rem;">
+      Core Logic & Architecture:
+    </p>
+
+    <div class="ide-container">
+      <div class="tab-bar">
+        <!-- ALL TABS FOR PROJECT 2 -->
+        <button class="tab-btn active" onclick="switchTab(this, 'eve-file1')">MainWindow.xaml</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file2')">MainWindow.xaml.cs</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file3')">MainViewModel.cs</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file4')">ViewModelBase.cs</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file5')">DelegateCommand.cs</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file6')">GameLogic.cs</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file7')">GameField.cs</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file8')">GameStorage.cs</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file9')">GameData.cs</button>
+        <button class="tab-btn" onclick="switchTab(this, 'eve-file10')">Documentation</button>
+      </div>
+      
+      <div id="eve-file1" class="file-pane active"><pre><code class="language-xml">&lt;!-- PASTE FULL MainWindow.xaml CODE HERE --&gt;</code></pre></div>
+      <div id="eve-file2" class="file-pane"><pre><code class="language-csharp">// PASTE FULL MainWindow.xaml.cs CODE HERE</code></pre></div>
+      <div id="eve-file3" class="file-pane"><pre><code class="language-csharp">// PASTE FULL MainViewModel.cs CODE HERE</code></pre></div>
+      <div id="eve-file4" class="file-pane"><pre><code class="language-csharp">// PASTE FULL ViewModelBase.cs CODE HERE</code></pre></div>
+      <div id="eve-file5" class="file-pane"><pre><code class="language-csharp">// PASTE FULL DelegateCommand.cs CODE HERE</code></pre></div>
+      <div id="eve-file6" class="file-pane"><pre><code class="language-csharp">// PASTE FULL GameLogic.cs CODE HERE</code></pre></div>
+      <div id="eve-file7" class="file-pane"><pre><code class="language-csharp">// PASTE FULL GameField.cs CODE HERE</code></pre></div>
+      <div id="eve-file8" class="file-pane"><pre><code class="language-csharp">// PASTE FULL GameStorage.cs CODE HERE</code></pre></div>
+      <div id="eve-file9" class="file-pane"><pre><code class="language-csharp">// PASTE FULL GameData.cs CODE HERE</code></pre></div>
+      
+      <div id="eve-file10" class="file-pane">
+        <iframe class="pdf-frame" src="Dokumentacio.pdf" title="Game Documentation">
+            This browser does not support inline PDFs. Please download the PDF to view it: <a href="Dokumentacio.pdf">Download PDF</a>.
+        </iframe>
+      </div>
+    </div>
+  </article>
+
+  <!-- ================= PROJECT 3: THIS WEBSITE ================= -->
+  <article class="project-card">
+    <div class="project-header">
+      <h2>Portfolio Architecture Code</h2>
+      <p>The code for this webpage, demonstrating clean HTML/CSS structuring and DOM manipulation using vanilla JavaScript.</p>
+    </div>
+
+    <div class="ide-container">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab(this, 'web-file1')">index.html</button>
+        <button class="tab-btn" onclick="switchTab(this, 'web-file2')">styles.css</button>
+      </div>
+      
+      <div id="web-file1" class="file-pane active">
+        <pre><code class="language-html">&lt;!-- ENCODE YOUR FINAL index.html AND PASTE IT HERE --&gt;</code></pre>
+      </div>
+      <div id="web-file2" class="file-pane">
+        <pre><code class="language-css">/* PASTE FULL styles.css CODE HERE */</code></pre>
+      </div>
+    </div>
+  </article>
+
+</div>
+
+<!-- Interactive Engine Logic -->
+<script>
+  hljs.highlightAll();
+
+  function updateSlider(sliderId, targetIndex) {
+    const slider = document.getElementById(sliderId);
+    if (!slider) return;
+    
+    const slides = slider.querySelectorAll('.slide');
+    const dotsContainerId = sliderId.replace('slider', 'dots');
+    const dotsContainer = document.getElementById(dotsContainerId);
+    const dots = dotsContainer ? dotsContainer.querySelectorAll('.dot') : [];
+
+    if (targetIndex >= slides.length) targetIndex = 0;
+    if (targetIndex < 0) targetIndex = slides.length - 1;
+    
+    slider.dataset.current = targetIndex;
+
+    slides.forEach((slide, i) => {
+      slide.classList.toggle('active', i === targetIndex);
+    });
+
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === targetIndex);
+    });
+  }
+
+  function moveSlide(sliderId, step) {
+    const slider = document.getElementById(sliderId);
+    const currentIndex = parseInt(slider.dataset.current, 10);
+    updateSlider(sliderId, currentIndex + step);
+  }
+
+  function setSlide(sliderId, index) {
+    updateSlider(sliderId, index);
+  }
+
+  function switchTab(buttonElement, targetFileId) {
+    const ideContainer = buttonElement.closest('.ide-container');
+    
+    const tabs = ideContainer.querySelectorAll('.tab-btn');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    buttonElement.classList.add('active');
+
+    const panes = ideContainer.querySelectorAll('.file-pane');
+    panes.forEach(pane => pane.classList.remove('active'));
+    
+    const targetPane = ideContainer.querySelector(`#${targetFileId}`);
+    if (targetPane) {
+      targetPane.classList.add('active');
+    }
+  }
+</script>
+
+</body>
+</html>
