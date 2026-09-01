@@ -221,10 +221,22 @@ pre {
   border: 0;
 }
 
+/* --- Native Video Global Styling --- */
+.video-wrapper video, 
+.gallery-video-wrapper video {
+  position: absolute;
+  top: 0; 
+  left: 0;
+  width: 100%; 
+  height: 100%;
+  object-fit: cover; /* Prevents stretching */
+  pointer-events: none; /* Makes the video completely unclickable */
+}
 
+/* --- Modern Minigame Gallery --- */
 .gallery-video-wrapper {
   position: relative;
-  padding-bottom: 56.25%;
+  padding-bottom: 56.25%; /* Forces the perfect 16:9 aspect ratio */
   height: 0;
   overflow: hidden;
   border-radius: 8px;
@@ -232,13 +244,6 @@ pre {
   background: #000;
   border: 1px solid var(--card-border);
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.gallery-video-wrapper iframe {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  border: 0;
 }
 
 .gallery-grid {
@@ -275,4 +280,11 @@ pre {
 
 @media (max-width: 600px) {
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.gallery-video-wrapper iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: 0;
 }
