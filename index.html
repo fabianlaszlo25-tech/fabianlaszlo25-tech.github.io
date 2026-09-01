@@ -2365,46 +2365,26 @@ public class BoardSquare : MonoBehaviour
           </div>
         </div>
 
+        
         <div class="slide">
           <div class="module-title">Custom Minigames Integration</div>
           <p class="module-desc">Distinct custom minigames designed and programmed to interface with the overarching instance-based architecture.</p>
           
-          <div class="ide-container">
-            <div class="tab-bar">
-              <button class="tab-btn active" onclick="switchTab(this, 'vid-1')">Basketball</button>
-              <button class="tab-btn" onclick="switchTab(this, 'vid-2')">Shapes</button>
-              <button class="tab-btn" onclick="switchTab(this, 'vid-3')">TableTop</button>
-              <button class="tab-btn" onclick="switchTab(this, 'vid-4')">Bird</button>
-              <button class="tab-btn" onclick="switchTab(this, 'vid-5')">Papers</button>
-              <button class="tab-btn" onclick="switchTab(this, 'vid-6')">Delivery</button>
-              <button class="tab-btn" onclick="switchTab(this, 'vid-7')">Memories</button>
-              <button class="tab-btn" onclick="switchTab(this, 'vid-8')">Puzzle</button>
-            </div>
-            
-            <div id="vid-1" class="file-pane active">
-              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/yDSVlg0S5Pk?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
-            </div>
-            <div id="vid-2" class="file-pane">
-              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/qyJfbKN9DJg?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
-            </div>
-            <div id="vid-3" class="file-pane">
-              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/Cm7dK4EW-qc?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
-            </div>
-            <div id="vid-4" class="file-pane">
-              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_4?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
-            </div>
-            <div id="vid-5" class="file-pane">
-              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/v11-noRNrhM?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
-            </div>
-            <div id="vid-6" class="file-pane">
-              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/xWtqN2Dag_M?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
-            </div>
-            <div id="vid-7" class="file-pane">
-              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/AypkEALSPeY?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
-            </div>
-            <div id="vid-8" class="file-pane">
-              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/IQbiOhA6Jxo?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
-            </div>
+         
+          <div class="gallery-video-wrapper">
+            <iframe id="minigame-player" src="https://www.youtube.com/embed/yDSVlg0S5Pk?autoplay=0&rel=0" allowfullscreen></iframe>
+          </div>
+
+         
+          <div class="gallery-grid">
+            <button class="gallery-btn active" onclick="swapVideo(this, 'yDSVlg0S5Pk')">Basketball</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'qyJfbKN9DJg')">Shapes</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'Cm7dK4EW-qc')">TableTop</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'v11-noRNrhM')">Bird</button> <!--this and shaders somewhere else is temperary as youtube had to be a jerk-->
+            <button class="gallery-btn" onclick="swapVideo(this, 'v11-noRNrhM')">Papers</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'xWtqN2Dag_M')">Delivery</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'AypkEALSPeY')">Memories</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'IQbiOhA6Jxo')">Puzzle</button>
           </div>
         </div>
 
@@ -3399,7 +3379,16 @@ p.subtitle { color: var(--text-muted); font-size: 1.15rem; }
   margin-right: auto;
   pointer-events: none; 
 }
-.video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+.video-wrapper iframe { 
+  position: absolute; 
+  top: -10%; 
+  left: -5%; 
+  width: 110%; 
+  height: 120%; 
+  border: 0; 
+  pointer-events: none;
+}
 
 .ide-container {
   border: 1px solid var(--tab-border);
@@ -3481,7 +3470,63 @@ pre {
   width: 100%;
   height: 100%;
   border: 0;
-} */</code></pre>
+}
+
+
+.gallery-video-wrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  background: #000;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.gallery-video-wrapper iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border: 0;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.gallery-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+  padding: 0.8rem 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.gallery-btn:hover {
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.gallery-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(88, 166, 255, 0.4);
+}
+
+@media (max-width: 600px) {
+  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+}</code></pre>
       </div>
     </div>
   </article>
@@ -3539,6 +3584,17 @@ pre {
       targetPane.classList.add('active');
     }
   }
+
+
+  function swapVideo(buttonElement, videoId) {
+    const buttons = document.querySelectorAll('.gallery-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    buttonElement.classList.add('active');
+
+    const player = document.getElementById('minigame-player');
+    player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+  }
+
 </script>
 
 </body>
