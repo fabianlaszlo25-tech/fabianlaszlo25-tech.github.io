@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Software & Graphics Engineer Portfolio</title>
+  <title>László Fábián - Portfolio</title>
   
-  <!-- Visual Studio Dark Theme for Code Snippets via Highlight.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/styles/vs2015.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.12.0/highlight.min.js"></script>
   
-  <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -17,29 +15,27 @@
 <div class="container">
   
   <header>
-    <h1>Software & Technical Art Portfolio</h1>
-    <p class="subtitle">Systems Architecture • Game Mechanics • UI/UX Integration</p>
+    <h1>LÁSZLÓ FÁBIÁN</h1>
+    <p class="subtitle">Software Engineering & Computer Graphics Portfolio</p>
   </header>
 
-  <!-- ================= PROJECT 1: Interactive Systems Showcase ================= -->
   <article class="project-card">
     <div class="project-header">
-      <h2>Interactive Systems & VFX Showcase</h2>
-      <p>A modular Unity project demonstrating custom mathematical shaders, reliable state management, and robust application lifecycle handling.</p>
+      <h2>W.T.T.R.C. — 3D Interactive Story Game</h2>
+      <p>A modular Unity project demonstrating custom mathematical shaders, reliable state management, and an event-driven architecture.</p>
     </div>
     
     <div class="slider-wrapper">
-      <button class="nav-btn" onclick="moveSlide('main-slider', -1)">&#10094;</button>
+      <button class="nav-btn prev" onclick="moveSlide('main-slider', -1)">&#10094;</button>
       
       <div class="slides-container" id="main-slider" data-current="0">
         
-        <!-- SUB-MODULE 1: SAVE SYSTEM & APP FLOW -->
         <div class="slide active">
-          <div class="module-title">State Serialization & Application Flow</div>
-          <p class="module-desc">A centralized JSON-based save architecture handling scene transitions, object graveyard tracking, and robust hardware overrides.</p>
+          <div class="module-title">State Serialization & Lifecycle Management</div>
+          <p class="module-desc">A centralized JSON serialization system that persists game state across sessions and manages complex object lifecycles.</p>
           
           <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+            <iframe src="https://www.youtube.com/embed/bhfs4qFY6wM?autoplay=1&mute=1&loop=1&controls=0&playlist=bhfs4qFY6wM" allowfullscreen></iframe>
           </div>
 
           <div class="ide-container">
@@ -51,21 +47,716 @@
               <button class="tab-btn" onclick="switchTab(this, 's1-file5')">PauseManager.cs</button>
             </div>
             
-            <div id="s1-file1" class="file-pane active"><pre><code class="language-csharp">// PASTE FULL SaveManager.cs CODE HERE</code></pre></div>
-            <div id="s1-file2" class="file-pane"><pre><code class="language-csharp">// PASTE FULL Saveable.cs CODE HERE</code></pre></div>
-            <div id="s1-file3" class="file-pane"><pre><code class="language-csharp">// PASTE FULL SettingsManager.cs CODE HERE</code></pre></div>
-            <div id="s1-file4" class="file-pane"><pre><code class="language-csharp">// PASTE FULL LauncherManager.cs CODE HERE</code></pre></div>
-            <div id="s1-file5" class="file-pane"><pre><code class="language-csharp">// PASTE FULL PauseManager.cs CODE HERE</code></pre></div>
+            <div id="s1-file1" class="file-pane active"><pre><code class="language-csharp">using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class SaveManager : MonoBehaviour
+{
+    public static SaveManager Instance;
+
+    [Header("Settings")]
+    public string mainMenuSceneName = "00Pre-Stuff";
+
+    private float autosaveTimer = 0f;
+    private float autosaveInterval = 300f;
+
+    private GameData currentData = new GameData();
+    public List<Saveable> activeSaveables = new List<Saveable>();
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void Start()
+    {
+        LoadGame();
+    }
+
+    void Update()
+    {
+        autosaveTimer += Time.deltaTime;
+        if (autosaveTimer >= autosaveInterval)
+        {
+            SaveGame();
+            autosaveTimer = 0f;
+        }
+    }
+
+    void OnApplicationQuit()
+    {
+        SaveGame();
+    }
+
+    private string GetSavePath()
+    {
+        string saveFolder = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Saves");
+        if (!Directory.Exists(saveFolder)) Directory.CreateDirectory(saveFolder);
+        return Path.Combine(saveFolder, "SaveData.json");
+    }
+
+    public void Register(Saveable s)
+    {
+        if (currentData.destroyedObjectIds.Contains(s.uniqueId))
+        {
+            Destroy(s.gameObject);
+            return;
+        }
+
+        if (!activeSaveables.Contains(s))
+        {
+            activeSaveables.Add(s);
+
+            ObjectData savedData = currentData.objectDatas.Find(x => x.id == s.uniqueId);
+            if (savedData != null) s.ApplyObjectData(savedData);
+        }
+    }
+
+    public void Deregister(Saveable s) { activeSaveables.Remove(s); }
+
+    public void SaveGame()
+    {
+        if (SceneManager.GetActiveScene().name == mainMenuSceneName)
+        {
+            return;
+        }
+
+        currentData.objectDatas.Clear();
+        currentData.lastSavedScene = SceneManager.GetActiveScene().name;
+
+        foreach (Saveable s in activeSaveables)
+        {
+            currentData.objectDatas.Add(s.GetObjectData());
+        }
+
+        string json = JsonUtility.ToJson(currentData, true);
+        File.WriteAllText(GetSavePath(), json);
+        Debug.Log("Game Saved to: " + GetSavePath());
+    }
+    public void RecordDestroyed(string id)
+    {
+        if (!currentData.destroyedObjectIds.Contains(id))
+        {
+            currentData.destroyedObjectIds.Add(id);
+        }
+    }
+    public void LoadGame()
+    {
+        string path = GetSavePath();
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            currentData = JsonUtility.FromJson<GameData>(json);
+
+            foreach (Saveable s in activeSaveables)
+            {
+                ObjectData savedData = currentData.objectDatas.Find(x => x.id == s.uniqueId);
+                if (savedData != null) s.ApplyObjectData(savedData);
+            }
+        }
+        else
+        {
+            currentData = new GameData();
+        }
+    }
+
+    public void WipeSaveForNewGame()
+    {
+        currentData = new GameData(); 
+
+        string path = GetSavePath();
+        if (File.Exists(path))
+        {
+            File.Delete(path); 
+        }
+        Debug.Log("Save file wiped for a new game.");
+    }
+}
+
+[System.Serializable]
+public class GameData
+{
+    public string lastSavedScene = "";
+    public List<ObjectData> objectDatas = new List<ObjectData>();
+
+    public List<string> destroyedObjectIds = new List<string>();
+}
+
+[System.Serializable]
+public class ObjectData
+{
+    public string id;
+    public Vector3 position;
+    public Quaternion rotation;
+    public Vector3 scale;
+    public string customData;
+    public bool isActive = true;
+}</code></pre></div>
+            <div id="s1-file2" class="file-pane"><pre><code class="language-csharp">using UnityEngine;
+
+public class Saveable : MonoBehaviour
+{
+    [Tooltip("Right-click the component header and select 'Generate ID'")]
+    public string uniqueId;
+
+    [ContextMenu("Generate ID")]
+    private void GenerateId()
+    {
+        uniqueId = System.Guid.NewGuid().ToString();
+    }
+
+    void Start()
+    {
+        if (string.IsNullOrEmpty(uniqueId)) GenerateId();
+
+        if (SaveManager.Instance != null) SaveManager.Instance.Register(this);
+    }
+
+    void OnDestroy()
+    {
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.Deregister(this);
+
+            if (gameObject.scene.isLoaded)
+            {
+                SaveManager.Instance.RecordDestroyed(uniqueId);
+            }
+        }
+    }
+
+    public ObjectData GetObjectData()
+    {
+        ObjectData data = new ObjectData
+        {
+            id = uniqueId,
+            position = transform.position,
+            rotation = transform.rotation,
+            scale = transform.localScale,
+            isActive = gameObject.activeSelf
+        };
+
+        ElevatorSystem elevator = GetComponent<ElevatorSystem>();
+        if (elevator != null)
+        {
+            data.customData = elevator.GetSaveState();
+        }
+
+        DialogueManager dialogueManager = GetComponent<DialogueManager>();
+        if (dialogueManager != null)
+        {
+            data.customData = dialogueManager.GetSaveState();
+        }
+
+        return data;
+    }
+
+    public void ApplyObjectData(ObjectData data)
+    {
+        transform.position = data.position;
+        transform.rotation = data.rotation;
+        transform.localScale = data.scale;
+
+        gameObject.SetActive(data.isActive);
+
+        if (!string.IsNullOrEmpty(data.customData))
+        {
+            ElevatorSystem elevator = GetComponent<ElevatorSystem>();
+            if (elevator != null)
+            {
+                elevator.LoadSaveState(data.customData);
+            }
+
+            DialogueManager dialogueManager = GetComponent<DialogueManager>();
+            if (dialogueManager != null)
+            {
+                dialogueManager.LoadSaveState(data.customData);
+            }
+        }
+    }
+}</code></pre></div>
+            <div id="s1-file3" class="file-pane"><pre><code class="language-csharp">using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using TMPro;
+using UnityEngine.UI;
+
+public class SettingsManager : MonoBehaviour
+{
+    [Header("UI References")]
+    public TMP_Dropdown resolutionDropdown;
+    public TMP_Dropdown displayModeDropdown;
+    public Slider volumeSlider;
+
+    [Tooltip("Set this slider to use Whole Numbers from 0 to 3 in the Inspector.")]
+    public Slider qualitySlider;
+
+    [Header("New Settings")]
+    public Slider sensitivitySlider;
+
+    private List<Resolution> filteredResolutions;
+
+    void Start()
+    {
+        Resolution[] allResolutions = Screen.resolutions;
+        filteredResolutions = new List<Resolution>();
+        resolutionDropdown.ClearOptions();
+        List<string> options = new List<string>();
+        int currentResIndex = 0;
+
+        for (int i = 0; i < allResolutions.Length; i++)
+        {
+            if (filteredResolutions.Count == 0 ||
+                filteredResolutions[filteredResolutions.Count - 1].width != allResolutions[i].width ||
+                filteredResolutions[filteredResolutions.Count - 1].height != allResolutions[i].height)
+            {
+                filteredResolutions.Add(allResolutions[i]);
+                string option = allResolutions[i].width + " x " + allResolutions[i].height;
+                options.Add(option);
+
+                if (allResolutions[i].width == PlayerPrefs.GetInt("ResWidth", Screen.currentResolution.width) &&
+                    allResolutions[i].height == PlayerPrefs.GetInt("ResHeight", Screen.currentResolution.height))
+                {
+                    currentResIndex = filteredResolutions.Count - 1;
+                }
+            }
+        }
+
+        resolutionDropdown.AddOptions(options);
+        resolutionDropdown.value = currentResIndex;
+        resolutionDropdown.RefreshShownValue();
+
+        
+        displayModeDropdown.value = PlayerPrefs.GetInt("DisplayMode", 1);
+        volumeSlider.value = PlayerPrefs.GetFloat("MasterVolume", 1f);
+
+        if (qualitySlider != null)
+            qualitySlider.value = PlayerPrefs.GetInt("QualityLevel", 3); 
+
+        if (sensitivitySlider != null)
+            sensitivitySlider.value = PlayerPrefs.GetFloat("MouseSensitivity", 5.5f);
+
+        ApplyQualitySettings();
+        ApplyAudioSettings();
+
+        resolutionDropdown.onValueChanged.AddListener(delegate { SaveResolution(); });
+        displayModeDropdown.onValueChanged.AddListener(delegate { SaveDisplayMode(); });
+        volumeSlider.onValueChanged.AddListener(delegate { ApplyAudioSettings(); });
+
+        if (qualitySlider != null)
+            qualitySlider.onValueChanged.AddListener(delegate { ApplyQualitySettings(); });
+
+        if (sensitivitySlider != null)
+            sensitivitySlider.onValueChanged.AddListener(delegate { SaveSensitivity(); });
+    }
+
+    public void SaveResolution()
+    {
+        Resolution res = filteredResolutions[resolutionDropdown.value];
+        PlayerPrefs.SetInt("ResWidth", res.width);
+        PlayerPrefs.SetInt("ResHeight", res.height);
+        PlayerPrefs.Save();
+    }
+
+    public void SaveDisplayMode()
+    {
+        PlayerPrefs.SetInt("DisplayMode", displayModeDropdown.value);
+        PlayerPrefs.Save();
+    }
+
+    public void SaveSensitivity()
+    {
+        PlayerPrefs.SetFloat("MouseSensitivity", sensitivitySlider.value);
+        PlayerPrefs.Save();
+    }
+
+    public void ApplyAudioSettings()
+    {
+        float vol = volumeSlider.value;
+        PlayerPrefs.SetFloat("MasterVolume", vol);
+        PlayerPrefs.Save();
+        AudioListener.volume = vol;
+    }
+
+    public void ApplyQualitySettings()
+    {
+        UniversalRenderPipelineAsset urpAsset = (UniversalRenderPipelineAsset)GraphicsSettings.currentRenderPipeline;
+        if (urpAsset == null) return;
+
+        int qualityLevel = (int)qualitySlider.value;
+        PlayerPrefs.SetInt("QualityLevel", qualityLevel);
+
+        
+        switch (qualityLevel)
+        {
+            case 0: // Low
+                urpAsset.renderScale = 0.5f;
+                urpAsset.shadowDistance = 0f; 
+                urpAsset.msaaSampleCount = 1; 
+                break;
+
+            case 1: // Medium
+                urpAsset.renderScale = 0.75f;
+                urpAsset.shadowDistance = 50f;
+                urpAsset.mainLightShadowmapResolution = 1024; 
+                urpAsset.msaaSampleCount = 2; 
+                break;
+
+            case 2: // High
+                urpAsset.renderScale = 1.0f;
+                urpAsset.shadowDistance = 50f;
+                urpAsset.mainLightShadowmapResolution = 4096; 
+                urpAsset.msaaSampleCount = 8; 
+                break;
+
+            case 3: // Max
+                urpAsset.renderScale = 1.2f;
+                urpAsset.shadowDistance = 100f;
+                urpAsset.mainLightShadowmapResolution = 4096; 
+                urpAsset.msaaSampleCount = 16; 
+                break;
+        }
+
+        PlayerPrefs.Save();
+    }
+}</code></pre></div>
+            <div id="s1-file4" class="file-pane"><pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.IO;
+using TMPro;
+
+public class LauncherManager : MonoBehaviour
+{
+    [Header("Scene Settings")]
+    public string gameSceneName = "MainGameScene";
+
+    [Header("UI References")]
+    [Tooltip("Drag the UI Panel here that asks 'Are you sure?' when overwriting a save.")]
+    public GameObject overwriteWarningPanel;
+
+    [Tooltip("Drag your Continue button here so it can be disabled if no save exists.")]
+    public GameObject continueButton;
+
+    void Awake()
+    {
+        SetScreenResolution();
+    }
+
+    void Start()
+    {
+        if (overwriteWarningPanel != null) overwriteWarningPanel.SetActive(false);
+
+        if (continueButton != null)
+        {
+            continueButton.SetActive(File.Exists(GetSavePath()));
+        }
+    }
+
+    private string GetSavePath()
+    {
+        string saveFolder = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Saves");
+        if (!Directory.Exists(saveFolder)) Directory.CreateDirectory(saveFolder);
+
+        return Path.Combine(saveFolder, "SaveData.json");
+    }
+
+
+    public void OnNewGameClicked()
+    {
+        if (File.Exists(GetSavePath()))
+        {
+            if (overwriteWarningPanel != null) overwriteWarningPanel.SetActive(true);
+        }
+        else
+        {
+            PlayerPrefs.SetInt("HasPlayedIntro", 0);
+            PlayerPrefs.Save();
+
+            StartNewGame();
+        }
+    }
+
+    public void ConfirmNewGame()
+    {
+        string path = GetSavePath();
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.WipeSaveForNewGame();
+        }
+
+        PlayerPrefs.SetInt("HasPlayedIntro", 0);
+        PlayerPrefs.Save();
+
+        StartNewGame();
+    }
+
+    public void CancelNewGame()
+    {
+        if (overwriteWarningPanel != null) overwriteWarningPanel.SetActive(false);
+    }
+
+    private void StartNewGame()
+    {
+        SetScreenResolution();
+        Debug.Log("Starting fresh game in: " + gameSceneName);
+        SceneManager.LoadScene(gameSceneName);
+    }
+
+
+    public void ContinueGame()
+    {
+        SetScreenResolution();
+
+        string pathToLoad = GetSavePath();
+        string sceneToLoad = gameSceneName;
+
+        if (File.Exists(pathToLoad))
+        {
+            string json = File.ReadAllText(pathToLoad);
+            GameData savedData = JsonUtility.FromJson<GameData>(json);
+
+            if (!string.IsNullOrEmpty(savedData.lastSavedScene))
+            {
+                sceneToLoad = savedData.lastSavedScene;
+                Debug.Log("Found save file! Loading saved scene: " + sceneToLoad);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Tried to continue, but no save found! Starting new game instead.");
+        }
+
+        SceneManager.LoadScene(sceneToLoad);
+    }
+
+
+    private void SetScreenResolution()
+    {
+        Resolution[] allResolutions = Screen.resolutions;
+        Resolution nativeRes = allResolutions[allResolutions.Length - 1];
+
+        FullScreenMode forcedMode = FullScreenMode.FullScreenWindow;
+
+        Screen.SetResolution(nativeRes.width, nativeRes.height, forcedMode);
+
+        PlayerPrefs.SetInt("ResWidth", nativeRes.width);
+        PlayerPrefs.SetInt("ResHeight", nativeRes.height);
+        PlayerPrefs.SetInt("DisplayMode", 1); 
+        PlayerPrefs.Save();
+    }
+
+    public void QuitLauncher() => Application.Quit();
+}</code></pre></div>
+            <div id="s1-file5" class="file-pane"><pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class PauseManager : MonoBehaviour
+{
+    [Header("Pause Camera Setup")]
+    public Camera pauseCamera;
+
+    [Header("UI Panels")]
+    public GameObject pauseMenuPanel;
+    public GameObject settingsPanel;
+    public GameObject interactCanvas;
+
+    [Header("Interaction Managers")]
+    public DualSceneManager dualSceneManager;
+    public PlayerInspector playerInspector;
+
+    [Header("World Space Canvases")]
+    public Canvas[] worldSpaceCanvases;
+
+    private Camera activePlayerCamera;
+
+    private float toggleCooldown = 0.2f;
+    private float lastToggleTime = 0f;
+
+    void Start()
+    {
+        pauseMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+
+        if (pauseCamera != null)
+        {
+            pauseCamera.gameObject.SetActive(true);
+            pauseCamera.enabled = false;
+        }
+
+        Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        if (interactCanvas != null) interactCanvas.SetActive(true);
+    }
+
+    public void LoadMainMenu()
+    {
+        Time.timeScale = 1f;
+
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.SaveGame();
+        }
+
+        SceneManager.LoadScene("00Pre-Stuff");
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape) && Time.unscaledTime > lastToggleTime + toggleCooldown)
+        {
+            lastToggleTime = Time.unscaledTime;
+
+            if ((dualSceneManager != null && (dualSceneManager.isAtComputer || dualSceneManager.isTransitioning)) ||
+                (playerInspector != null && (playerInspector.isInspecting || playerInspector.isTransitioning)))
+            {
+                return;
+            }
+
+            if (pauseMenuPanel.activeSelf || (settingsPanel != null && settingsPanel.activeSelf))
+            {
+                ResumeGame();
+            }
+            else
+            {
+                PauseGame();
+            }
+        }
+    }
+
+    void LateUpdate()
+    {
+        if (pauseMenuPanel.activeSelf || (settingsPanel != null && settingsPanel.activeSelf))
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+    }
+
+    public void PauseGame()
+    {
+        Time.timeScale = 0f;
+        pauseMenuPanel.SetActive(true);
+
+        if (interactCanvas != null) interactCanvas.SetActive(false);
+
+        if (Camera.main != null && Camera.main != pauseCamera)
+        {
+            activePlayerCamera = Camera.main;
+            activePlayerCamera.enabled = false;
+        }
+
+        if (pauseCamera != null)
+        {
+            pauseCamera.gameObject.SetActive(true);
+            pauseCamera.enabled = true;
+        }
+
+        foreach (Canvas canvas in worldSpaceCanvases)
+        {
+            if (canvas != null) canvas.worldCamera = pauseCamera;
+        }
+
+        TogglePlayerScripts(false);
+    }
+
+    public void ResumeGame()
+    {
+        Time.timeScale = 1f;
+        pauseMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+
+        if (pauseCamera != null) pauseCamera.enabled = false;
+        if (activePlayerCamera != null) activePlayerCamera.enabled = true;
+
+        TogglePlayerScripts(true);
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    private void TogglePlayerScripts(bool turnOn)
+    {
+        PlayerInspector inspector = FindObjectOfType<PlayerInspector>();
+        ElevatorButtonScanner scanner = FindObjectOfType<ElevatorButtonScanner>();
+
+        bool enableOuter = turnOn;
+        bool enableInner = false;
+
+        if (inspector != null)
+        {
+            if (turnOn && inspector.isInspecting)
+            {
+                enableOuter = false;
+                enableInner = true;
+            }
+        }
+
+        MSMO_PlayerController playerCtrl = FindObjectOfType<MSMO_PlayerController>();
+        if (playerCtrl != null) playerCtrl.enabled = enableOuter;
+
+        MSMoveObjects moveObj = FindObjectOfType<MSMoveObjects>();
+        if (moveObj != null) moveObj.enabled = enableOuter;
+
+        if (inspector != null) inspector.enabled = turnOn;
+        if (scanner != null) scanner.enabled = turnOn;
+
+        if (dualSceneManager != null) dualSceneManager.enabled = turnOn;
+
+        InnerPlayerControl innerCtrl = FindObjectOfType<InnerPlayerControl>();
+        if (innerCtrl != null) innerCtrl.SetControlsActive(enableInner);
+    }
+
+    public void OpenSettings()
+    {
+        pauseMenuPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
+    }
+
+    public void CloseSettings()
+    {
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        pauseMenuPanel.SetActive(true);
+    }
+
+    public void QuitGame()
+    {
+        Time.timeScale = 1f;
+
+        if (SaveManager.Instance != null)
+        {
+            SaveManager.Instance.SaveGame();
+        }
+
+        Application.Quit();
+    }
+}</code></pre></div>
           </div>
         </div>
 
-        <!-- SUB-MODULE 2: DATAMOSH VFX -->
         <div class="slide">
-          <div class="module-title">Universal Render Pipeline: Datamosh VFX</div>
-          <p class="module-desc">A screen-space datamosh effect implemented via URP ScriptableRendererFeature utilizing motion vectors and spatial erosion.</p>
+          <div class="module-title">Custom Motion-Vector Shaders</div>
+          <p class="module-desc">Screen-space shaders in HLSL built from scratch, using vector and matrix mathematics for real-time visual effects.</p>
           
           <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+            <iframe src="https://www.youtube.com/embed/yDSVlg0S5Pk?autoplay=1&mute=1&loop=1&controls=0&playlist=yDSVlg0S5Pk" allowfullscreen></iframe>
           </div>
 
           <div class="ide-container">
@@ -76,20 +767,404 @@
               <button class="tab-btn" onclick="switchTab(this, 's2-file5')">DatamoshManager.cs</button>
             </div>
             
-            <div id="s2-file1" class="file-pane active"><pre><code class="language-csharp">// PASTE FULL DatamoshFeature.cs CODE HERE</code></pre></div>
-            <div id="s2-file2" class="file-pane"><pre><code class="language-hlsl">// PASTE FULL DatamoshUnified.shader HLSL CODE HERE</code></pre></div>
-            <div id="s2-file4" class="file-pane"><pre><code class="language-csharp">// PASTE FULL FullscreenMoshWrapper.cs CODE HERE</code></pre></div>
-            <div id="s2-file5" class="file-pane"><pre><code class="language-csharp">// PASTE FULL DatamoshManager.cs CODE HERE</code></pre></div>
+            <div id="s2-file1" class="file-pane active"><pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+
+public class DatamoshFeature : ScriptableRendererFeature
+{
+    [System.Serializable]
+    public class Settings
+    {
+        public Shader unifiedShader;
+        public LayerMask appearLayerMask;
+    }
+
+    public Settings settings = new Settings();
+    private Material material;
+    private MaskPass maskPass;
+    private MoshPass moshPass;
+    private RTHandle maskBuffer;
+    private RTHandle tempBuffer;
+
+    public static bool requestClear = false;
+
+    public override void Create()
+    {
+        if (settings.unifiedShader == null) return;
+        material = CoreUtils.CreateEngineMaterial(settings.unifiedShader);
+
+        maskPass = new MaskPass(material, settings.appearLayerMask);
+        maskPass.renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+
+        moshPass = new MoshPass(material);
+        moshPass.renderPassEvent = RenderPassEvent.BeforeRenderingPostProcessing;
+    }
+
+    public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+    {
+        if (material == null) return;
+        if (renderingData.cameraData.cameraType != CameraType.Game) return;
+        if (renderingData.cameraData.camera.targetTexture == null) return;
+
+        var desc = renderingData.cameraData.cameraTargetDescriptor;
+        if (desc.width <= 0 || desc.height <= 0) return;
+
+        desc.depthBufferBits = 0;
+        desc.graphicsFormat = UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm;
+
+        RenderingUtils.ReAllocateIfNeeded(ref maskBuffer, desc, FilterMode.Point, TextureWrapMode.Clamp, name: "_DatamoshMask");
+        RenderingUtils.ReAllocateIfNeeded(ref tempBuffer, desc, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_DatamoshTemp");
+
+        maskPass.Setup(maskBuffer);
+        moshPass.Setup(maskBuffer, tempBuffer);
+
+        renderer.EnqueuePass(maskPass);
+        renderer.EnqueuePass(moshPass);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        CoreUtils.Destroy(material);
+        maskBuffer?.Release();
+        tempBuffer?.Release();
+        if (moshPass != null) moshPass.Cleanup();
+    }
+
+    class MaskPass : ScriptableRenderPass
+    {
+        private Material material;
+        private LayerMask appearLayer;
+        private RTHandle maskBuffer;
+
+        public MaskPass(Material mat, LayerMask layer) { material = mat; appearLayer = layer; }
+        public void Setup(RTHandle mask) { maskBuffer = mask; }
+
+        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+        {
+            CommandBuffer cmd = CommandBufferPool.Get("Datamosh Mask");
+            CoreUtils.SetRenderTarget(cmd, maskBuffer, ClearFlag.Color, Color.black);
+
+            DrawingSettings drawSettings = CreateDrawingSettings(new ShaderTagId("UniversalForward"), ref renderingData, SortingCriteria.CommonOpaque);
+            drawSettings.SetShaderPassName(1, new ShaderTagId("UniversalForwardOnly"));
+            drawSettings.SetShaderPassName(2, new ShaderTagId("LightweightForward"));
+            drawSettings.SetShaderPassName(3, new ShaderTagId("SRPDefaultUnlit"));
+            drawSettings.SetShaderPassName(4, new ShaderTagId("DepthOnly"));
+
+            drawSettings.overrideMaterial = material;
+            drawSettings.overrideMaterialPassIndex = 1;
+
+            FilteringSettings filterSettings = new FilteringSettings(RenderQueueRange.all, appearLayer);
+
+            context.ExecuteCommandBuffer(cmd);
+            cmd.Clear();
+            context.DrawRenderers(renderingData.cullResults, ref drawSettings, ref filterSettings);
+
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
+        }
+    }
+
+    class MoshPass : ScriptableRenderPass
+    {
+        private Material material;
+        private RTHandle maskBuffer, tempBuffer;
+        private RenderTexture historyRT;
+        private RTHandle historyHandle;
+
+        public MoshPass(Material mat) { material = mat; }
+        public void Setup(RTHandle mask, RTHandle temp) { maskBuffer = mask; tempBuffer = temp; }
+
+        public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
+        {
+            ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Motion);
+        }
+
+        public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
+        {
+            CommandBuffer cmd = CommandBufferPool.Get("Datamosh Blit");
+
+            var cameraTarget = renderingData.cameraData.renderer.cameraColorTargetHandle;
+
+            if (cameraTarget == null || cameraTarget.rt == null) { CommandBufferPool.Release(cmd); return; }
+            if (tempBuffer == null || tempBuffer.rt == null) { CommandBufferPool.Release(cmd); return; }
+
+            var desc = renderingData.cameraData.cameraTargetDescriptor;
+            if (historyRT == null || historyRT.width != desc.width || historyRT.height != desc.height)
+            {
+                if (historyRT != null) historyRT.Release();
+                historyHandle?.Release();
+
+                historyRT = new RenderTexture(desc.width, desc.height, 0, UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm);
+                historyRT.name = "Datamosh_WorkTex_Internal";
+                historyRT.Create();
+                historyHandle = RTHandles.Alloc(historyRT);
+            }
+
+            if (historyHandle == null || historyHandle.rt == null) { CommandBufferPool.Release(cmd); return; }
+
+            if (DatamoshFeature.requestClear)
+            {
+                CoreUtils.SetRenderTarget(cmd, historyHandle, ClearFlag.Color, Color.clear);
+                DatamoshFeature.requestClear = false; 
+            }
+
+            cmd.SetGlobalTexture("_WorkTex", historyHandle);
+            cmd.SetGlobalTexture("_MaskTex", maskBuffer);
+
+            Blitter.BlitCameraTexture(cmd, cameraTarget, tempBuffer, material, 0);
+            Blitter.BlitCameraTexture(cmd, tempBuffer, historyHandle, material, 2);
+            Blitter.BlitCameraTexture(cmd, tempBuffer, cameraTarget, material, 2);
+
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
+        }
+
+        public void Cleanup()
+        {
+            if (historyRT != null) historyRT.Release();
+            historyHandle?.Release();
+        }
+    }
+}</code></pre></div>
+            <div id="s2-file2" class="file-pane"><pre><code class="language-hlsl">Shader "Hidden/DatamoshUnified"
+{
+    SubShader
+    {
+        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
+        Cull Off ZWrite Off ZTest Always
+
+        Pass
+        {
+            Name "Datamosh Blit"
+            ColorMask RGBA
+            Blend Off
+            
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+
+            TEXTURE2D_X(_WorkTex);            SAMPLER(sampler_WorkTex);
+            TEXTURE2D_X(_MotionVectorTexture);SAMPLER(sampler_MotionVectorTexture);
+            TEXTURE2D_X(_MaskTex);            SAMPLER(sampler_MaskTex);
+
+            float _BlockSize;
+            float _Scale;
+            float _Blend;
+            float _SpatialErosion;
+            float _IsIFrame;
+            float _IsDisappearing; 
+            float _MaxSmearPixels;
+            float _AppearErosion;
+
+            half4 Frag(Varyings input) : SV_Target
+            {
+                float2 uv = input.texcoord;
+                float2 texel = 1.0 / _ScreenParams.xy;
+                
+                half4 realColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
+                float currentMask = SAMPLE_TEXTURE2D_X(_MaskTex, sampler_LinearClamp, uv).r;
+
+                if (_IsIFrame > 0.5) 
+                {
+                    return half4(realColor.rgb, currentMask);
+                }
+                
+                float2 blockUv = floor(uv * _ScreenParams.xy / _BlockSize) * _BlockSize * texel;
+                
+                float2 smoothMv = SAMPLE_TEXTURE2D_X(_MotionVectorTexture, sampler_MotionVectorTexture, uv).rg;
+                float2 blockMv = SAMPLE_TEXTURE2D_X(_MotionVectorTexture, sampler_MotionVectorTexture, blockUv).rg;
+                float2 mv = lerp(smoothMv, blockMv, 0.5) * _Scale; 
+
+                float2 pixelOffset = mv * _ScreenParams.xy;          
+                float pixelDist = length(pixelOffset);
+                float maxPixel = _MaxSmearPixels;
+
+                if (pixelDist > maxPixel)
+                {
+                      return half4(realColor.rgb, 0.0);   
+                }
+                    
+                
+
+                float2 offsetUv = uv - mv;
+                half4 moshedColor = SAMPLE_TEXTURE2D_X(_WorkTex, sampler_WorkTex, offsetUv);
+                
+                float motionMag = length(mv);
+                
+                float erosion = motionMag * (_IsDisappearing > 0.5 ? _SpatialErosion : _AppearErosion) * 5000.0; 
+
+                float finalMask = 0;
+
+                if (_IsDisappearing > 0.5) {
+                    finalMask = saturate(currentMask + moshedColor.a - erosion - 0.001);
+                } else {
+                    float historyMask = saturate(moshedColor.a - erosion);
+                    
+                    finalMask = currentMask * historyMask;
+                }
+
+                if (finalMask < 0.01) finalMask = 0;
+                
+                half3 outputColor = lerp(realColor.rgb, moshedColor.rgb, finalMask * _Blend);
+                
+                return half4(outputColor, finalMask);
+            }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Solid White Mask"
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            struct Attributes { float4 positionOS : POSITION; };
+            struct Varyings { float4 positionCS : SV_POSITION; };
+            Varyings vert(Attributes input) { Varyings output; output.positionCS = TransformObjectToHClip(input.positionOS.xyz); return output; }
+            float4 frag(Varyings input) : SV_Target { return float4(1.0, 1.0, 1.0, 1.0); }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Perfect Copy"
+            ColorMask RGBA
+            Blend Off
+            
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment fragCopy
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
+            float4 fragCopy(Varyings input) : SV_Target { return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.texcoord); }
+            ENDHLSL
+        }
+    }
+}</code></pre></div>
+            <div id="s2-file4" class="file-pane"><pre><code class="language-csharp">using UnityEngine;
+using UnityEngine.UI;
+
+[RequireComponent(typeof(Camera))]
+public class FullscreenMoshWrapper : MonoBehaviour
+{
+    [Tooltip("Drag your original, moving Player Camera here.")]
+    public Camera gameCamera;
+
+    private Camera displayCamera;
+    private RenderTexture gameRT;
+    private RawImage screenQuad;
+
+    void Awake()
+    {
+        displayCamera = GetComponent<Camera>();
+        displayCamera.clearFlags = CameraClearFlags.SolidColor;
+        displayCamera.backgroundColor = Color.black;
+
+        displayCamera.cullingMask = 1 << LayerMask.NameToLayer("UI");
+        displayCamera.depth = 100;
+
+        GameObject canvasObj = new GameObject("Mosh_Display_Canvas");
+
+        canvasObj.layer = LayerMask.NameToLayer("UI");
+        canvasObj.transform.SetParent(transform);
+
+        Canvas canvas = canvasObj.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = displayCamera;
+        canvas.planeDistance = 1f;
+
+        GameObject quadObj = new GameObject("Mosh_Screen_Quad");
+
+        quadObj.layer = LayerMask.NameToLayer("UI");
+        quadObj.transform.SetParent(canvasObj.transform, false);
+        screenQuad = quadObj.AddComponent<RawImage>();
+
+        RectTransform rect = screenQuad.rectTransform;
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+
+        UpdateRenderTexture();
+    }
+
+    void Update()
+    {
+        if (gameRT == null || gameRT.width != Screen.width || gameRT.height != Screen.height)
+        {
+            UpdateRenderTexture();
+        }
+    }
+
+    void UpdateRenderTexture()
+    {
+        if (gameRT != null)
+        {
+            gameCamera.targetTexture = null;
+            gameRT.Release();
+            Destroy(gameRT);
+        }
+
+        if (Screen.width <= 0 || Screen.height <= 0) return;
+
+        gameRT = new RenderTexture(Screen.width, Screen.height, 24, RenderTextureFormat.DefaultHDR);
+        gameRT.name = "Fullscreen_Game_RT";
+
+        gameRT.Create();
+
+        if (gameCamera != null)
+        {
+            gameCamera.targetTexture = gameRT;
+        }
+
+        if (screenQuad != null)
+        {
+            screenQuad.texture = gameRT;
+        }
+    }
+}</code></pre></div>
+            <div id="s2-file5" class="file-pane"><pre><code class="language-csharp">using UnityEngine;
+
+public class DatamoshManager : MonoBehaviour
+{
+    public static DatamoshManager Instance;
+
+    [Header("Shader Tuning")]
+    public float blockSize = 30f;
+    public float scale = 1f;
+    public float blend = 1f;
+    public float spatialErosion = 0f; 
+    public float maxSmearPixels = 1;
+    public float appearErosion = 30f;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+    }
+
+    void Update()
+    {
+        Shader.SetGlobalFloat("_BlockSize", blockSize);
+        Shader.SetGlobalFloat("_Scale", scale);
+        Shader.SetGlobalFloat("_Blend", blend);
+        Shader.SetGlobalFloat("_SpatialErosion", spatialErosion);
+        Shader.SetGlobalFloat("_MaxSmearPixels", maxSmearPixels);
+        Shader.SetGlobalFloat("_AppearErosion", appearErosion);
+    }
+}</code></pre></div>
           </div>
         </div>
 
-        <!-- SUB-MODULE 3: ARCHITECTURE (INSTANCING & EVENT BUS) -->
         <div class="slide">
-          <div class="module-title">Core Engine & Cross-Code Communication</div>
-          <p class="module-desc">Zero-allocation event communication architectures enabling high-performance GPU instancing and decoupled view models.</p>
+          <div class="module-title">Decoupled Architecture & Event Bus</div>
+          <p class="module-desc">A custom event bus designed to minimize runtime allocations, enabling seamless communication between independent components.</p>
           
           <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+            <iframe src="https://www.youtube.com/embed/IQbiOhA6Jxo?autoplay=1&mute=1&loop=1&controls=0&playlist=IQbiOhA6Jxo" allowfullscreen></iframe>
           </div>
 
           <div class="ide-container">
@@ -227,18 +1302,322 @@ public static class ThreadSafeEventBus
 }
               </code></pre>
             </div>
-            <div id="s3-file3" class="file-pane"><pre><code class="language-csharp">// PASTE FULL DualSceneManager.cs CODE HERE</code></pre></div>
-            <div id="s3-file4" class="file-pane"><pre><code class="language-csharp">// PASTE FULL InnerPlayerControl.cs CODE HERE</code></pre></div>
+            <div id="s3-file3" class="file-pane"><pre><code class="language-csharp">using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+[System.Serializable]
+public class SceneSequenceItem
+{
+    public string sceneName;
+    public GameObject associatedObject;
+}
+
+public class DualSceneManager : MonoBehaviour
+{
+    [Header("Scene Sequence Settings")]
+    public List<SceneSequenceItem> sceneSequence = new List<SceneSequenceItem>();
+    private int currentSequenceIndex = 0;
+    private bool isSceneSwitching = false;
+
+    [Header("Player Settings")]
+    public MonoBehaviour outerPlayerMovement;
+    public MSMoveObjects irlMoveObjects;
+
+    private InnerPlayerControl innerPlayerControl;
+
+    [Header("UI Overrides")]
+    public GameObject pauseManagerObject;
+
+    [Header("Camera Transition Settings")]
+    public Transform mainCamera;
+    public Transform monitorCameraSpot;
+    public float transitionSpeed = 3f;
+
+    [Header("Monitor Leaning & Zoom Settings")]
+    public float zoomSpeed = 2.0f;
+    public float zoomSmoothness = 10.0f;
+    public float maxLeanIn = 0.8f;
+    public float maxLeanBack = -0.5f;
+
+    [Header("Interaction Settings")]
+    public float interactDistance = 3.5f;
+    public GameObject interactSprite;
+
+    [HideInInspector] public bool isAtComputer = false;
+    [HideInInspector] public bool isTransitioning = false;
+
+    private float targetMonitorZoom = 0f;
+    private float currentMonitorZoom = 0f;
+
+    private Vector3 originalCamLocalPos;
+    private Quaternion originalCamLocalRot;
+    private Transform originalCamParent;
+
+    void Start()
+    {
+        if (interactSprite != null) interactSprite.SetActive(false);
+
+        for (int i = 0; i < sceneSequence.Count; i++)
+        {
+            if (sceneSequence[i].associatedObject != null)
+            {
+                sceneSequence[i].associatedObject.SetActive(i == 0);
+            }
+        }
+
+        if (sceneSequence.Count > 0)
+        {
+            StartCoroutine(LoadInitialSceneRoutine());
+        }
+    }
+
+    public void RegisterInnerPlayer(InnerPlayerControl newPlayerControl)
+    {
+        innerPlayerControl = newPlayerControl;
+
+        if (innerPlayerControl != null)
+        {
+            innerPlayerControl.SetControlsActive(isAtComputer && !isTransitioning);
+        }
+    }
+
+    IEnumerator LoadInitialSceneRoutine()
+    {
+        isSceneSwitching = true;
+        var firstItem = sceneSequence[0];
+
+        if (!string.IsNullOrEmpty(firstItem.sceneName))
+        {
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(firstItem.sceneName, LoadSceneMode.Additive);
+            while (!asyncLoad.isDone) yield return null;
+        }
+
+        isSceneSwitching = false;
+    }
+
+    void Update()
+    {
+        if (isTransitioning) return;
+
+        if (!isAtComputer)
+        {
+            bool canInteract = false;
+            Ray ray = new Ray(mainCamera.position, mainCamera.forward);
+
+            if (Physics.Raycast(ray, out RaycastHit hit, interactDistance))
+            {
+                if (hit.collider.CompareTag("Interactable"))
+                {
+                    canInteract = true;
+
+                    if (Input.GetKeyDown(KeyCode.E))
+                    {
+                        isAtComputer = true;
+                        if (interactSprite != null) interactSprite.SetActive(false);
+
+                        targetMonitorZoom = 0f;
+                        currentMonitorZoom = 0f;
+
+                        StartCoroutine(TransitionCamera(true));
+                        return;
+                    }
+                }
+            }
+
+            if (interactSprite != null) interactSprite.SetActive(canInteract);
+        }
+        else
+        {
+            if (Input.GetKey(KeyCode.UpArrow))
+            {
+                targetMonitorZoom += zoomSpeed * Time.deltaTime;
+            }
+            else if (Input.GetKey(KeyCode.DownArrow))
+            {
+                targetMonitorZoom -= zoomSpeed * Time.deltaTime;
+            }
+
+            targetMonitorZoom = Mathf.Clamp(targetMonitorZoom, maxLeanBack, maxLeanIn);
+            currentMonitorZoom = Mathf.Lerp(currentMonitorZoom, targetMonitorZoom, Time.deltaTime * zoomSmoothness);
+
+            if (monitorCameraSpot != null)
+            {
+                mainCamera.position = monitorCameraSpot.position + (monitorCameraSpot.forward * currentMonitorZoom);
+            }
+
+            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape))
+            {
+                isAtComputer = false;
+                StartCoroutine(TransitionCamera(false));
+            }
+        }
+    }
+
+    IEnumerator TransitionCamera(bool movingToMonitor)
+    {
+        isTransitioning = true;
+
+        if (movingToMonitor)
+        {
+            if (irlMoveObjects != null) irlMoveObjects.forceHideUI = true;
+            if (pauseManagerObject != null) pauseManagerObject.SetActive(false);
+
+            originalCamParent = mainCamera.parent;
+            originalCamLocalPos = mainCamera.localPosition;
+            originalCamLocalRot = mainCamera.localRotation;
+        }
+
+        mainCamera.SetParent(null);
+        if (outerPlayerMovement != null) outerPlayerMovement.enabled = false;
+
+        if (innerPlayerControl != null) innerPlayerControl.SetControlsActive(false);
+
+        Vector3 targetPos = movingToMonitor ? monitorCameraSpot.position : originalCamParent.TransformPoint(originalCamLocalPos);
+        Quaternion targetRot = movingToMonitor ? monitorCameraSpot.rotation : originalCamParent.rotation * originalCamLocalRot;
+
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * transitionSpeed;
+            float smoothStep = Mathf.SmoothStep(0, 1, t);
+
+            mainCamera.position = Vector3.Lerp(mainCamera.position, targetPos, smoothStep);
+            mainCamera.rotation = Quaternion.Slerp(mainCamera.rotation, targetRot, smoothStep);
+
+            yield return null;
+        }
+
+        mainCamera.position = targetPos;
+        mainCamera.rotation = targetRot;
+
+        if (movingToMonitor)
+        {
+            if (innerPlayerControl != null) innerPlayerControl.SetControlsActive(true);
+        }
+        else
+        {
+            mainCamera.SetParent(originalCamParent);
+            if (outerPlayerMovement != null) outerPlayerMovement.enabled = true;
+
+            if (irlMoveObjects != null) irlMoveObjects.forceHideUI = false;
+            if (pauseManagerObject != null) pauseManagerObject.SetActive(true);
+        }
+
+        isTransitioning = false;
+    }
+
+    public void ForceExitComputer()
+    {
+        if (isAtComputer && !isTransitioning)
+        {
+            isAtComputer = false;
+            StartCoroutine(TransitionCamera(false));
+        }
+    }
+
+    public void SwitchToNextScene()
+    {
+        if (sceneSequence.Count <= 1 || isSceneSwitching) return;
+        int nextIndex = (currentSequenceIndex + 1) % sceneSequence.Count;
+        StartCoroutine(SwitchSceneRoutine(nextIndex));
+    }
+
+    public void SwitchToPreviousScene()
+    {
+        if (sceneSequence.Count <= 1 || isSceneSwitching) return;
+        int prevIndex = (currentSequenceIndex - 1 + sceneSequence.Count) % sceneSequence.Count;
+        StartCoroutine(SwitchSceneRoutine(prevIndex));
+    }
+
+    public void SwitchToSceneIndex(int targetIndex)
+    {
+        if (sceneSequence.Count <= 1 || isSceneSwitching) return;
+        if (targetIndex < 0 || targetIndex >= sceneSequence.Count || targetIndex == currentSequenceIndex) return;
+        StartCoroutine(SwitchSceneRoutine(targetIndex));
+    }
+
+    private IEnumerator SwitchSceneRoutine(int targetIndex)
+    {
+        isSceneSwitching = true;
+
+        if (innerPlayerControl != null) innerPlayerControl.SetControlsActive(false);
+
+        Scene mainOfficeScene = gameObject.scene;
+
+        for (int i = SceneManager.sceneCount - 1; i >= 0; i--)
+        {
+            Scene loadedScene = SceneManager.GetSceneAt(i);
+
+            if (loadedScene != mainOfficeScene)
+            {
+                AsyncOperation unloadOp = SceneManager.UnloadSceneAsync(loadedScene);
+                while (!unloadOp.isDone) yield return null;
+            }
+        }
+
+        var currentItem = sceneSequence[currentSequenceIndex];
+        if (currentItem.associatedObject != null) currentItem.associatedObject.SetActive(false);
+
+        currentSequenceIndex = targetIndex;
+        var nextItem = sceneSequence[currentSequenceIndex];
+
+        if (nextItem.associatedObject != null) nextItem.associatedObject.SetActive(true);
+
+        if (!string.IsNullOrEmpty(nextItem.sceneName))
+        {
+            AsyncOperation loadOp = SceneManager.LoadSceneAsync(nextItem.sceneName, LoadSceneMode.Additive);
+            while (!loadOp.isDone) yield return null;
+        }
+
+        FailButton[] allFailButtons = Object.FindObjectsByType<FailButton>(FindObjectsSortMode.None);
+        foreach (FailButton btn in allFailButtons) btn.ResetButton();
+
+        isSceneSwitching = false;
+    }
+}</code></pre></div>
+            <div id="s3-file4" class="file-pane"><pre><code class="language-csharp">using UnityEngine;
+
+public class InnerPlayerControl : MonoBehaviour
+{
+    [Tooltip("Drag the specific scripts you want to disable here (e.g., MSMoveObjects from the MINIGAME scene ONLY)")]
+    public MonoBehaviour[] scriptsToToggle;
+
+    void Start()
+    {
+        DualSceneManager manager = Object.FindFirstObjectByType<DualSceneManager>();
+
+        if (manager != null)
+        {
+            manager.RegisterInnerPlayer(this);
+        }
+        else
+        {
+            SetControlsActive(false);
+        }
+    }
+
+    public void SetControlsActive(bool isActive)
+    {
+        foreach (MonoBehaviour script in scriptsToToggle)
+        {
+            if (script != null)
+            {
+                script.enabled = isActive;
+            }
+        }
+    }
+}</code></pre></div>
           </div>
         </div>
 
-        <!-- SUB-MODULE 4: TURN-BASED MINIGAME & INTERACTABLES -->
         <div class="slide">
-          <div class="module-title">Turn Based Minigame System</div>
-          <p class="module-desc">A grid-based combat state machine handling animations and game logic calculations as well as input handleing.</p>
+          <div class="module-title">Combat State Machine</div>
+          <p class="module-desc">A deterministic grid-based combat state machine integrated seamlessly into the core gameplay loop.</p>
           
           <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+            <iframe src="https://www.youtube.com/embed/Cm7dK4EW-qc?autoplay=1&mute=1&loop=1&controls=0&playlist=Cm7dK4EW-qc" allowfullscreen></iframe>
           </div>
 
           <div class="ide-container">
@@ -248,14 +1627,789 @@ public static class ThreadSafeEventBus
               <button class="tab-btn" onclick="switchTab(this, 's4-file3')">BoardSquare.cs</button>
             </div>
             
-            <div id="s4-file1" class="file-pane active"><pre><code class="language-csharp">// PASTE FULL MinigameManager.cs CODE HERE</code></pre></div>
-            <div id="s4-file2" class="file-pane"><pre><code class="language-csharp">// PASTE FULL Figure.cs CODE HERE</code></pre></div>
-            <div id="s4-file3" class="file-pane"><pre><code class="language-csharp">// PASTE FULL BoardSquare.cs CODE HERE</code></pre></div>
+            <div id="s4-file1" class="file-pane active"><pre><code class="language-csharp">using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+
+public class MinigameManager : MonoBehaviour
+{
+    public enum GamePhase { Inactive, Spawning, Selecting, Placing, Rearranging, Battling, GameOver }
+
+    [Header("Game State")]
+    public GamePhase currentPhase = GamePhase.Inactive;
+
+    [Header("Interaction & Camera")]
+    public Transform mainCamera;
+    public float interactDistance = 100f;
+    public Transform waitingStation;
+    public GameObject globalInteractCanvas;
+    public TextMeshProUGUI globalDescriptionText;
+
+    [Header("Board Setup")]
+    public BoardSquare[] playerBackRowSquares;
+    public BoardSquare[] enemyBackRowSquares;
+
+    [Header("Global Life Points")]
+    public int playerGlobalDamageTaken = 0;
+    public int enemyGlobalDamageTaken = 0;
+
+    [Header("Drafting Setup")]
+    public int numberOfDrafts = 3;
+    public GameObject[] availableFigurePrefabs;
+    public Transform spawnPointLeft;
+    public Transform spawnPointRight;
+
+    [Header("Spawns Container")]
+    public Transform spawnsContainer;
+
+    [Header("Enemy Setup")]
+    public Vector3 enemyRotationOffset = new Vector3(0, 180f, 0);
+
+    [Header("Game Over Events")]
+    public GameObject[] winEnableObjects;
+    public GameObject[] winDisableObjects;
+    public GameObject[] loseEnableObjects;
+    public GameObject[] loseDisableObjects;
+
+    private Figure activeSelectedFigure;
+    private int selectionRoundsCompleted = 0;
+    private List<Figure> playerTeam = new List<Figure>();
+
+    private Figure currentLeftChoice;
+    private Figure currentRightChoice;
+    private BoardSquare hoveredSquare;
+
+    void Start()
+    {
+        if (mainCamera == null && Camera.main != null) mainCamera = Camera.main.transform;
+        if (globalInteractCanvas != null) globalInteractCanvas.SetActive(false);
+        if (globalDescriptionText != null) globalDescriptionText.text = "";
+        if (spawnsContainer == null) spawnsContainer = this.transform;
+
+        foreach (BoardSquare sq in enemyBackRowSquares)
+        {
+            if (sq.currentFigure != null)
+            {
+                sq.currentFigure.currentSquare = sq;
+                sq.currentFigure.SetState(Figure.FigureState.Idle);
+            }
+        }
+
+        StartMinigame();
+    }
+
+    void Update()
+    {
+        HandleRaycastInteractions();
+    }
+
+    private void HandleRaycastInteractions()
+    {
+        if (hoveredSquare != null)
+        {
+            hoveredSquare.SetHover(false);
+            hoveredSquare = null;
+        }
+
+        if (mainCamera == null) return;
+
+        bool showInteractUI = false;
+        string textToShow = "";
+
+        Ray ray = new Ray(mainCamera.position, mainCamera.forward);
+        RaycastHit[] hits = Physics.RaycastAll(ray, interactDistance, ~0, QueryTriggerInteraction.Collide);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        foreach (RaycastHit hit in hits)
+        {
+            if (activeSelectedFigure != null && hit.collider.gameObject == activeSelectedFigure.gameObject)
+                continue;
+
+            if (currentPhase == GamePhase.Selecting)
+            {
+                Figure f = hit.collider.GetComponentInParent<Figure>();
+                if (f == null) f = hit.collider.GetComponentInChildren<Figure>();
+
+                if (f != null && f.currentState == Figure.FigureState.Idle && (f == currentLeftChoice || f == currentRightChoice))
+                {
+                    showInteractUI = true;
+                    textToShow = f.description;
+
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        FigureSelected(f);
+                    }
+                    break;
+                }
+            }
+            else if (currentPhase == GamePhase.Placing || currentPhase == GamePhase.Rearranging)
+            {
+                BoardSquare sq = hit.collider.GetComponentInParent<BoardSquare>();
+                if (sq == null) sq = hit.collider.GetComponentInChildren<BoardSquare>();
+
+                if (sq != null)
+                {
+                    if (sq.isPlayerBackRow)
+                    {
+                        bool isEmpty = (sq.currentFigure == null);
+                        bool isValidPhase = (currentPhase == GamePhase.Placing && isEmpty) || (currentPhase == GamePhase.Rearranging && !isEmpty);
+
+                        if (isValidPhase)
+                        {
+                            hoveredSquare = sq;
+                            sq.SetHover(true);
+                            showInteractUI = true;
+
+                            if (Input.GetMouseButtonDown(0))
+                            {
+                                if (currentPhase == GamePhase.Placing) SquareSelected(sq);
+                                else if (currentPhase == GamePhase.Rearranging) PickupFigureForRearrange(sq);
+                            }
+                        }
+                    }
+                    break;
+                }
+
+                if (currentPhase == GamePhase.Rearranging)
+                {
+                    StartBattleButton btn = hit.collider.GetComponentInParent<StartBattleButton>();
+                    if (btn == null) btn = hit.collider.GetComponentInChildren<StartBattleButton>();
+
+                    if (btn != null)
+                    {
+                        showInteractUI = true;
+                        if (Input.GetMouseButtonDown(0))
+                        {
+                            FinalizePlacementAndStartBattle();
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (globalInteractCanvas != null) globalInteractCanvas.SetActive(showInteractUI);
+        if (globalDescriptionText != null) globalDescriptionText.text = textToShow;
+    }
+
+    public void StartMinigame()
+    {
+        selectionRoundsCompleted = 0;
+        SpawnStrategicEnemies();
+        StartCoroutine(SpawnSelectionPhase());
+    }
+
+    private void SpawnStrategicEnemies()
+    {
+        foreach (BoardSquare sq in enemyBackRowSquares)
+        {
+            if (sq.startingEnemyPrefab != null && sq.currentFigure == null)
+            {
+                GameObject spawnedEnemy = Instantiate(sq.startingEnemyPrefab, sq.transform.position, sq.transform.rotation, spawnsContainer);
+
+                spawnedEnemy.transform.rotation = sq.transform.rotation;
+                spawnedEnemy.transform.Rotate(enemyRotationOffset, Space.Self);
+
+                Figure enemyFig = spawnedEnemy.GetComponent<Figure>();
+                sq.currentFigure = enemyFig;
+                enemyFig.currentSquare = sq;
+                enemyFig.SetState(Figure.FigureState.Idle);
+            }
+        }
+    }
+
+    private IEnumerator SpawnSelectionPhase()
+    {
+        currentPhase = GamePhase.Spawning;
+
+        if (availableFigurePrefabs.Length > 0 && spawnPointLeft != null && spawnPointRight != null)
+        {
+            GameObject prefabLeft = availableFigurePrefabs[Random.Range(0, availableFigurePrefabs.Length)];
+            GameObject prefabRight = availableFigurePrefabs[Random.Range(0, availableFigurePrefabs.Length)];
+
+            currentLeftChoice = Instantiate(prefabLeft, spawnPointLeft.position, spawnPointLeft.rotation, spawnsContainer).GetComponent<Figure>();
+            currentRightChoice = Instantiate(prefabRight, spawnPointRight.position, spawnPointRight.rotation, spawnsContainer).GetComponent<Figure>();
+
+            StartCoroutine(currentLeftChoice.MoveToPosition(spawnPointLeft.position + Vector3.up * 0.5f, 0.5f));
+            StartCoroutine(currentRightChoice.MoveToPosition(spawnPointRight.position + Vector3.up * 0.5f, 0.5f));
+        }
+
+        yield return new WaitForSeconds(0.5f);
+        currentPhase = GamePhase.Selecting;
+    }
+
+    public void FigureSelected(Figure chosenFigure)
+    {
+        if (currentPhase != GamePhase.Selecting) return;
+
+        activeSelectedFigure = chosenFigure;
+        Figure rejectedFigure = (chosenFigure == currentLeftChoice) ? currentRightChoice : currentLeftChoice;
+
+        activeSelectedFigure.SetState(Figure.FigureState.Selected);
+
+        StartCoroutine(chosenFigure.MoveToPosition(waitingStation.position, 0.5f));
+        StartCoroutine(SmoothRotate(chosenFigure.transform, waitingStation.rotation, 0.5f));
+
+        if (rejectedFigure != null) StartCoroutine(rejectedFigure.DismissFigure());
+
+        currentLeftChoice = null;
+        currentRightChoice = null;
+
+        if (globalInteractCanvas != null) globalInteractCanvas.SetActive(false);
+        if (globalDescriptionText != null) globalDescriptionText.text = "";
+
+        currentPhase = GamePhase.Placing;
+    }
+
+    public void SquareSelected(BoardSquare square)
+    {
+        if (currentPhase == GamePhase.Placing && activeSelectedFigure != null)
+        {
+            square.currentFigure = activeSelectedFigure;
+            activeSelectedFigure.currentSquare = square;
+            playerTeam.Add(activeSelectedFigure);
+
+            StartCoroutine(activeSelectedFigure.MoveToPosition(square.transform.position, 0.5f));
+
+            activeSelectedFigure.SetState(Figure.FigureState.Placed);
+            activeSelectedFigure = null;
+            selectionRoundsCompleted++;
+
+            if (globalInteractCanvas != null) globalInteractCanvas.SetActive(false);
+
+            if (selectionRoundsCompleted < numberOfDrafts)
+            {
+                StartCoroutine(SpawnSelectionPhase());
+            }
+            else
+            {
+                currentPhase = GamePhase.Rearranging;
+            }
+        }
+    }
+
+    public void PickupFigureForRearrange(BoardSquare square)
+    {
+        activeSelectedFigure = square.currentFigure;
+        square.currentFigure = null;
+        playerTeam.Remove(activeSelectedFigure);
+
+        activeSelectedFigure.SetState(Figure.FigureState.Selected);
+        StartCoroutine(activeSelectedFigure.MoveToPosition(waitingStation.position, 0.2f));
+        StartCoroutine(SmoothRotate(activeSelectedFigure.transform, waitingStation.rotation, 0.2f));
+
+        if (globalInteractCanvas != null) globalInteractCanvas.SetActive(false);
+        currentPhase = GamePhase.Placing;
+    }
+
+    public void FinalizePlacementAndStartBattle()
+    {
+        if (currentPhase != GamePhase.Rearranging) return;
+
+        if (globalInteractCanvas != null) globalInteractCanvas.SetActive(false);
+        currentPhase = GamePhase.Battling;
+        StartCoroutine(CombatSequenceRoutine());
+    }
+
+    private IEnumerator CombatSequenceRoutine()
+    {
+        playerGlobalDamageTaken = 0;
+        enemyGlobalDamageTaken = 0;
+
+        foreach (BoardSquare backSquare in playerBackRowSquares)
+        {
+            if (backSquare.currentFigure != null && backSquare.forwardSquare != null)
+            {
+                Figure fig = backSquare.currentFigure;
+                fig.PlaySafeAnim(fig.stateWalk);
+
+                StartCoroutine(fig.MoveToPosition(backSquare.forwardSquare.transform.position, 1.0f));
+                backSquare.forwardSquare.currentFigure = fig;
+                backSquare.currentFigure = null;
+                fig.currentSquare = backSquare.forwardSquare;
+            }
+        }
+
+        foreach (BoardSquare backSquare in enemyBackRowSquares)
+        {
+            if (backSquare.currentFigure != null && backSquare.forwardSquare != null)
+            {
+                Figure fig = backSquare.currentFigure;
+                fig.PlaySafeAnim(fig.stateWalk);
+
+                StartCoroutine(fig.MoveToPosition(backSquare.forwardSquare.transform.position, 1.0f));
+                backSquare.forwardSquare.currentFigure = fig;
+                backSquare.currentFigure = null;
+                fig.currentSquare = backSquare.forwardSquare;
+            }
+        }
+
+        yield return new WaitForSeconds(1.0f);
+
+        foreach (BoardSquare backSquare in playerBackRowSquares)
+        {
+            if (backSquare.forwardSquare != null && backSquare.forwardSquare.currentFigure != null)
+                backSquare.forwardSquare.currentFigure.SetState(Figure.FigureState.InBattle);
+        }
+        foreach (BoardSquare backSquare in enemyBackRowSquares)
+        {
+            if (backSquare.forwardSquare != null && backSquare.forwardSquare.currentFigure != null)
+                backSquare.forwardSquare.currentFigure.SetState(Figure.FigureState.InBattle);
+        }
+
+        yield return new WaitForSeconds(0.5f);
+
+        for (int i = 0; i < playerBackRowSquares.Length; i++)
+        {
+            Figure playerFig = playerBackRowSquares[i].forwardSquare.currentFigure;
+            Figure enemyFig = enemyBackRowSquares[i].forwardSquare.currentFigure;
+
+            bool pAlive = playerFig != null && playerFig.currentState != Figure.FigureState.Dead;
+            bool eAlive = enemyFig != null && enemyFig.currentState != Figure.FigureState.Dead;
+
+            if (pAlive && eAlive)
+            {
+                while (playerFig.currentState != Figure.FigureState.Dead && enemyFig.currentState != Figure.FigureState.Dead)
+                {
+                    yield return StartCoroutine(playerFig.ExecuteAttack(enemyFig, (globalDamage) =>
+                    {
+                        enemyGlobalDamageTaken += globalDamage;
+                    }));
+                    yield return new WaitForSeconds(0.2f);
+
+                    if (enemyFig.currentState != Figure.FigureState.Dead)
+                    {
+                        yield return StartCoroutine(enemyFig.ExecuteAttack(playerFig, (globalDamage) =>
+                        {
+                            playerGlobalDamageTaken += globalDamage;
+                        }));
+                        yield return new WaitForSeconds(0.2f);
+                    }
+                }
+            }
+            else if (pAlive)
+            {
+                yield return StartCoroutine(playerFig.ExecuteAttack(null, (globalDamage) =>
+                {
+                    enemyGlobalDamageTaken += globalDamage;
+                }));
+                yield return new WaitForSeconds(0.2f);
+            }
+            else if (eAlive)
+            {
+                yield return StartCoroutine(enemyFig.ExecuteAttack(null, (globalDamage) =>
+                {
+                    playerGlobalDamageTaken += globalDamage;
+                }));
+                yield return new WaitForSeconds(0.2f);
+            }
+        }
+
+        yield return new WaitForSeconds(1.0f);
+        EvaluateRoundEnd();
+    }
+
+    private void EvaluateRoundEnd()
+    {
+        currentPhase = GamePhase.GameOver;
+
+        if (playerGlobalDamageTaken > enemyGlobalDamageTaken)
+        {
+            PlayerLoses();
+        }
+        else if (enemyGlobalDamageTaken > playerGlobalDamageTaken)
+        {
+            PlayerWins();
+        }
+        else
+        {
+            bool playerHasSurvivors = false;
+            bool enemyHasSurvivors = false;
+
+            foreach (BoardSquare sq in playerBackRowSquares)
+            {
+                if (sq.forwardSquare != null && sq.forwardSquare.currentFigure != null && sq.forwardSquare.currentFigure.currentState != Figure.FigureState.Dead)
+                    playerHasSurvivors = true;
+            }
+            foreach (BoardSquare sq in enemyBackRowSquares)
+            {
+                if (sq.forwardSquare != null && sq.forwardSquare.currentFigure != null && sq.forwardSquare.currentFigure.currentState != Figure.FigureState.Dead)
+                    enemyHasSurvivors = true;
+            }
+
+            if (playerHasSurvivors && !enemyHasSurvivors)
+            {
+                PlayerWins();
+            }
+            else if (enemyHasSurvivors && !playerHasSurvivors)
+            {
+                PlayerLoses();
+            }
+            else
+            {
+                Debug.Log("Round Draw! Both sides have equal global damage and equal survivor status.");
+            }
+        }
+
+        StartCoroutine(ResetBoardForNextRound());
+    }
+
+    private void PlayerWins()
+    {
+        foreach (GameObject obj in winEnableObjects) if (obj != null) obj.SetActive(true);
+        foreach (GameObject obj in winDisableObjects) if (obj != null) obj.SetActive(false);
+    }
+
+    private void PlayerLoses()
+    {
+        foreach (GameObject obj in loseEnableObjects) if (obj != null) obj.SetActive(true);
+        foreach (GameObject obj in loseDisableObjects) if (obj != null) obj.SetActive(false);
+    }
+
+    private IEnumerator SmoothRotate(Transform target, Quaternion targetRotation, float duration)
+    {
+        Quaternion startRot = target.rotation;
+        float t = 0;
+        while (t < duration)
+        {
+            target.rotation = Quaternion.Slerp(startRot, targetRotation, t / duration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+        target.rotation = targetRotation;
+    }
+
+    private IEnumerator ResetBoardForNextRound()
+    {
+        yield return new WaitForSeconds(3.0f);
+
+        foreach (GameObject obj in winEnableObjects) if (obj != null) obj.SetActive(false);
+        foreach (GameObject obj in winDisableObjects) if (obj != null) obj.SetActive(true);
+
+        foreach (GameObject obj in loseEnableObjects) if (obj != null) obj.SetActive(false);
+        foreach (GameObject obj in loseDisableObjects) if (obj != null) obj.SetActive(true);
+
+        ClearBoard();
+
+        StartMinigame();
+    }
+
+    private void ClearBoard()
+    {
+        playerTeam.Clear();
+
+        foreach (BoardSquare square in playerBackRowSquares)
+        {
+            if (square.currentFigure != null) Destroy(square.currentFigure.gameObject);
+            if (square.forwardSquare != null && square.forwardSquare.currentFigure != null) Destroy(square.forwardSquare.currentFigure.gameObject);
+
+            square.currentFigure = null;
+            if (square.forwardSquare != null) square.forwardSquare.currentFigure = null;
+        }
+
+        foreach (BoardSquare square in enemyBackRowSquares)
+        {
+            if (square.currentFigure != null) Destroy(square.currentFigure.gameObject);
+            if (square.forwardSquare != null && square.forwardSquare.currentFigure != null) Destroy(square.forwardSquare.currentFigure.gameObject);
+
+            square.currentFigure = null;
+            if (square.forwardSquare != null) square.forwardSquare.currentFigure = null;
+        }
+    }
+}</code></pre></div>
+            <div id="s4-file2" class="file-pane"><pre><code class="language-csharp">using System.Collections;
+using TMPro;
+using UnityEngine;
+
+public class Figure : MonoBehaviour
+{
+    public enum FigureState { Idle, Hovered, Selected, Placed, InBattle, Dead }
+
+    [Header("Base Stats")]
+    public string figureName;
+    [TextArea] public string description;
+    public int attackDamage;
+    public int currentHP;
+
+    [Header("Special Abilities")]
+    public bool hasThorns;
+    public int thornsDamage = 1;
+
+    [Header("Animation State Names")]
+    public string stateIdle = "IdleNormal";
+    public string stateBattleIdle = "IdleBattle";
+    public string stateWalk = "WalkFWD";
+    public string stateAttack = "Attack01";
+    public string stateHit = "GetHit";
+    public string stateDie = "Die";
+
+    [Header("Animation Timings")]
+    public float attackHitFrame = 0.5f;
+    public float attackTotalDuration = 1.0f;
+    public float hitTotalDuration = 0.5f;
+
+    [Header("VFX Arrays (SetActives)")]
+    public GameObject[] attackEffects;
+    public GameObject[] hitEffects;
+
+    [Header("UI Stats")]
+    public TextMeshProUGUI hpText;
+    public TextMeshProUGUI attackText;
+
+    [Header("Components")]
+    public Animator anim;
+
+    [HideInInspector] public BoardSquare currentSquare;
+    public FigureState currentState = FigureState.Idle;
+
+    private bool isAnimatingAction = false;
+
+    void Start()
+    {
+        UpdateStatUI();
+        ToggleEffects(attackEffects, false);
+        ToggleEffects(hitEffects, false);
+        PlaySafeAnim(stateIdle);
+    }
+
+    void LateUpdate()
+    {
+        if (!isAnimatingAction && anim != null && anim.runtimeAnimatorController != null)
+        {
+            string targetState = (currentState == FigureState.Placed || currentState == FigureState.InBattle) ? stateBattleIdle : stateIdle;
+
+            if (!anim.GetCurrentAnimatorStateInfo(0).IsName(targetState) || anim.IsInTransition(0))
+            {
+                anim.Play(targetState);
+            }
+        }
+    }
+
+    public void SetHover(bool isHovered)
+    {
+        currentState = isHovered ? FigureState.Hovered : FigureState.Idle;
+    }
+
+    public void SetState(FigureState newState)
+    {
+        currentState = newState;
+
+        Collider[] allColliders = GetComponentsInChildren<Collider>();
+        foreach (Collider col in allColliders)
+        {
+            col.enabled = (currentState != FigureState.Selected);
+        }
+    }
+
+    public IEnumerator ExecuteAttack(Figure target, System.Action<int> onGlobalDamageDealt)
+    {
+        if (currentState == FigureState.Dead) yield break;
+
+        isAnimatingAction = true;
+        ToggleEffects(attackEffects, true);
+        PlaySafeAnim(stateAttack);
+
+        yield return new WaitForSeconds(attackHitFrame);
+
+        int overkillDamage = 0;
+
+        if (target != null && target.currentState != FigureState.Dead)
+        {
+            overkillDamage = target.TakeDamage(attackDamage);
+
+            if (target.hasThorns && target.currentState != FigureState.Dead)
+            {
+                this.TakeDamage(target.thornsDamage);
+            }
+        }
+        else
+        {
+            overkillDamage = attackDamage;
+        }
+
+        onGlobalDamageDealt?.Invoke(overkillDamage);
+
+        float remainingTime = Mathf.Max(0, attackTotalDuration - attackHitFrame);
+        yield return new WaitForSeconds(remainingTime);
+
+        ToggleEffects(attackEffects, false);
+
+        isAnimatingAction = false;
+        if (currentState != FigureState.Dead)
+        {
+            PlaySafeAnim(stateBattleIdle);
+        }
+    }
+
+    public int TakeDamage(int amount)
+    {
+        if (currentState == FigureState.Dead) return amount;
+
+        int overkill = Mathf.Max(0, amount - currentHP);
+
+        currentHP -= amount;
+        UpdateStatUI();
+
+        if (currentHP <= 0)
+        {
+            Die();
+        }
+        else
+        {
+            StartCoroutine(HitVisualsRoutine());
+        }
+
+        return overkill;
+    }
+
+    private IEnumerator HitVisualsRoutine()
+    {
+        isAnimatingAction = true;
+        ToggleEffects(hitEffects, true);
+        PlaySafeAnim(stateHit);
+
+        yield return new WaitForSeconds(hitTotalDuration);
+
+        ToggleEffects(hitEffects, false);
+        isAnimatingAction = false;
+    }
+
+    private void Die()
+    {
+        isAnimatingAction = true;
+        currentState = FigureState.Dead;
+        PlaySafeAnim(stateDie);
+
+        if (currentSquare != null)
+        {
+            currentSquare.currentFigure = null;
+        }
+    }
+
+    public void PlaySafeAnim(string stateName)
+    {
+        if (anim != null && anim.runtimeAnimatorController != null)
+        {
+            anim.Play(stateName, -1, 0f);
+        }
+    }
+
+    private void ToggleEffects(GameObject[] effectsArray, bool state)
+    {
+        if (effectsArray == null) return;
+        foreach (GameObject fx in effectsArray)
+        {
+            if (fx != null) fx.SetActive(state);
+        }
+    }
+
+    private void UpdateStatUI()
+    {
+        if (hpText != null) hpText.text = currentHP.ToString();
+        if (attackText != null) attackText.text = attackDamage.ToString();
+    }
+
+    public IEnumerator MoveToPosition(Vector3 targetPosition, float duration)
+    {
+        Vector3 startPosition = transform.position;
+        float elapsedTime = 0;
+
+        while (elapsedTime < duration)
+        {
+            transform.position = Vector3.Lerp(startPosition, targetPosition, (elapsedTime / duration));
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = targetPosition;
+    }
+
+    public IEnumerator DismissFigure()
+    {
+        yield return StartCoroutine(MoveToPosition(transform.position + Vector3.down * 5f, 1f));
+        Destroy(gameObject);
+    }
+}</code></pre></div>
+            <div id="s4-file3" class="file-pane"><pre><code class="language-csharp">using UnityEngine;
+
+public class BoardSquare : MonoBehaviour
+{
+    [Header("Grid Setup")]
+    public bool isPlayerBackRow;
+    public BoardSquare forwardSquare;
+
+    [Header("Manual Enemy Setup")]
+    public GameObject startingEnemyPrefab;
+
+    [Header("State")]
+    public Figure currentFigure;
+
+    [Header("Visual Feedback")]
+    public Renderer squareRenderer;
+    public Color highlightColor = new Color(0, 1, 0, 0.3f);
+    private Color originalColor;
+
+    void Start()
+    {
+        if (squareRenderer != null) originalColor = squareRenderer.material.color;
+    }
+
+    public void SetHover(bool isHovered)
+    {
+        if (squareRenderer != null)
+        {
+            squareRenderer.material.color = isHovered ? highlightColor : originalColor;
+        }
+    }
+}</code></pre></div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <div class="module-title">Custom Minigames Integration</div>
+          <p class="module-desc">Distinct custom minigames designed and programmed to interface with the overarching instance-based architecture.</p>
+          
+          <div class="ide-container">
+            <div class="tab-bar">
+              <button class="tab-btn active" onclick="switchTab(this, 'vid-1')">Basketball</button>
+              <button class="tab-btn" onclick="switchTab(this, 'vid-2')">Shapes</button>
+              <button class="tab-btn" onclick="switchTab(this, 'vid-3')">TableTop</button>
+              <button class="tab-btn" onclick="switchTab(this, 'vid-4')">Bird</button>
+              <button class="tab-btn" onclick="switchTab(this, 'vid-5')">Papers</button>
+              <button class="tab-btn" onclick="switchTab(this, 'vid-6')">Delivery</button>
+              <button class="tab-btn" onclick="switchTab(this, 'vid-7')">Memories</button>
+              <button class="tab-btn" onclick="switchTab(this, 'vid-8')">Puzzle</button>
+            </div>
+            
+            <div id="vid-1" class="file-pane active">
+              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/yDSVlg0S5Pk?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
+            </div>
+            <div id="vid-2" class="file-pane">
+              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/qyJfbKN9DJg?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
+            </div>
+            <div id="vid-3" class="file-pane">
+              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/Cm7dK4EW-qc?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
+            </div>
+            <div id="vid-4" class="file-pane">
+              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_4?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
+            </div>
+            <div id="vid-5" class="file-pane">
+              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/v11-noRNrhM?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
+            </div>
+            <div id="vid-6" class="file-pane">
+              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/xWtqN2Dag_M?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
+            </div>
+            <div id="vid-7" class="file-pane">
+              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/AypkEALSPeY?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
+            </div>
+            <div id="vid-8" class="file-pane">
+              <div class="video-tab-content"><iframe src="https://www.youtube.com/embed/IQbiOhA6Jxo?autoplay=1&mute=1&loop=1&controls=0" allowfullscreen></iframe></div>
+            </div>
           </div>
         </div>
 
       </div>
-      <button class="nav-btn" onclick="moveSlide('main-slider', 1)">&#10095;</button>
+      <button class="nav-btn next" onclick="moveSlide('main-slider', 1)">&#10095;</button>
     </div>
     
     <div class="dots" id="main-dots">
@@ -263,18 +2417,18 @@ public static class ThreadSafeEventBus
       <span class="dot" onclick="setSlide('main-slider', 1)"></span>
       <span class="dot" onclick="setSlide('main-slider', 2)"></span>
       <span class="dot" onclick="setSlide('main-slider', 3)"></span>
+      <span class="dot" onclick="setSlide('main-slider', 4)"></span> 
     </div>
   </article>
 
-  <!-- ================= PROJECT 2: Event-Driven Applications ================= -->
   <article class="project-card">
     <div class="project-header">
-      <h2>Event-Driven Applications – WPF MVVM Architecture</h2>
-      <p>A desktop application engineered for an algorithmic escape game, featuring strict Model-View separation, custom JSON persistence, and dynamic grid rendering.</p>
+      <h2>Event-Driven Desktop Grid Simulation</h2>
+      <p>A cross-platform desktop algorithmic simulation using MVVM architecture to separate presentation and application logic.</p>
     </div>
     
     <div class="video-wrapper">
-      <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE?autoplay=1&mute=1&loop=1&controls=0&playlist=YOUR_VIDEO_ID_HERE" allowfullscreen></iframe>
+      <iframe src="https://www.youtube.com/embed/EhLh1UU9ZPI?autoplay=1&mute=1&loop=1&controls=0&playlist=EhLh1UU9ZPI" allowfullscreen></iframe>
     </div>
     
     <p style="text-align: center; margin: 1.5rem 0 0.8rem 0; color: var(--text-muted); font-size: 0.95rem;">
@@ -283,7 +2437,6 @@ public static class ThreadSafeEventBus
 
     <div class="ide-container">
       <div class="tab-bar">
-        <!-- ALL TABS FOR PROJECT 2 -->
         <button class="tab-btn active" onclick="switchTab(this, 'eve-file1')">MainWindow.xaml</button>
         <button class="tab-btn" onclick="switchTab(this, 'eve-file2')">MainWindow.xaml.cs</button>
         <button class="tab-btn" onclick="switchTab(this, 'eve-file3')">MainViewModel.cs</button>
@@ -296,15 +2449,799 @@ public static class ThreadSafeEventBus
         <button class="tab-btn" onclick="switchTab(this, 'eve-file10')">Documentation</button>
       </div>
       
-      <div id="eve-file1" class="file-pane active"><pre><code class="language-xml">&lt;!-- PASTE FULL MainWindow.xaml CODE HERE --&gt;</code></pre></div>
-      <div id="eve-file2" class="file-pane"><pre><code class="language-csharp">// PASTE FULL MainWindow.xaml.cs CODE HERE</code></pre></div>
-      <div id="eve-file3" class="file-pane"><pre><code class="language-csharp">// PASTE FULL MainViewModel.cs CODE HERE</code></pre></div>
-      <div id="eve-file4" class="file-pane"><pre><code class="language-csharp">// PASTE FULL ViewModelBase.cs CODE HERE</code></pre></div>
-      <div id="eve-file5" class="file-pane"><pre><code class="language-csharp">// PASTE FULL DelegateCommand.cs CODE HERE</code></pre></div>
-      <div id="eve-file6" class="file-pane"><pre><code class="language-csharp">// PASTE FULL GameLogic.cs CODE HERE</code></pre></div>
-      <div id="eve-file7" class="file-pane"><pre><code class="language-csharp">// PASTE FULL GameField.cs CODE HERE</code></pre></div>
-      <div id="eve-file8" class="file-pane"><pre><code class="language-csharp">// PASTE FULL GameStorage.cs CODE HERE</code></pre></div>
-      <div id="eve-file9" class="file-pane"><pre><code class="language-csharp">// PASTE FULL GameData.cs CODE HERE</code></pre></div>
+      <div id="eve-file1" class="file-pane active"><pre><code class="language-xml">&lt;!-- <div id="eve-file1" class="file-pane active"><pre><code class="language-xml">&lt;Window x:Class="Menekulj.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Menekülj!" Height="800" Width="900"
+        Focusable="True"&gt;
+
+    &lt;Window.Resources&gt;
+        &lt;BooleanToVisibilityConverter x:Key="BoolToVisibility"/&gt;
+    &lt;/Window.Resources&gt;
+
+    &lt;Window.InputBindings&gt;
+        &lt;KeyBinding Key="W" Command="{Binding MoveCommand}" CommandParameter="Up"/&gt;
+        &lt;KeyBinding Key="S" Command="{Binding MoveCommand}" CommandParameter="Down"/&gt;
+        &lt;KeyBinding Key="A" Command="{Binding MoveCommand}" CommandParameter="Left"/&gt;
+        &lt;KeyBinding Key="D" Command="{Binding MoveCommand}" CommandParameter="Right"/&gt;
+    &lt;/Window.InputBindings&gt;
+
+    &lt;DockPanel&gt;
+        &lt;StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10"&gt;
+            &lt;Button Content="Pályaméret választás" Command="{Binding SelectMapSizeCommand}" Margin="5"/&gt;
+
+            &lt;ComboBox SelectedItem="{Binding SelectedMapSize}"
+                      Visibility="{Binding IsMapSizeSelectorVisible, Converter={StaticResource BoolToVisibility}}"
+                      Width="80" Margin="5"&gt;
+                &lt;ComboBox.ItemsSource&gt;
+                    &lt;x:Array Type="sys:Int32" xmlns:sys="clr-namespace:System;assembly=mscorlib"&gt;
+                        &lt;sys:Int32&gt;11&lt;/sys:Int32&gt;
+                        &lt;sys:Int32&gt;15&lt;/sys:Int32&gt;
+                        &lt;sys:Int32&gt;21&lt;/sys:Int32&gt;
+                    &lt;/x:Array&gt;
+                &lt;/ComboBox.ItemsSource&gt;
+            &lt;/ComboBox&gt;
+
+            &lt;Button Content="Új játék" Command="{Binding NewGameCommand}" Margin="5"/&gt;
+            &lt;Button Content="{Binding PauseButtonText}" Command="{Binding TogglePauseCommand}" Margin="5"/&gt;
+            &lt;Button Content="Mentés" Command="{Binding SaveGameCommand}" Margin="5" IsEnabled="{Binding CanSaveOrLoad}"/&gt;
+            &lt;Button Content="Betöltés" Command="{Binding LoadGameCommand}" Margin="5" IsEnabled="{Binding CanSaveOrLoad}"/&gt;
+
+            &lt;TextBlock Text="{Binding TimeDisplay}" Margin="20,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/&gt;
+            &lt;TextBlock Text="(WASD Irányítás)" Margin="10,0,0,0" VerticalAlignment="Center" FontStyle="Italic"/&gt;
+        &lt;/StackPanel&gt;
+
+        &lt;Border DockPanel.Dock="Bottom" Margin="10" BorderBrush="Gray" BorderThickness="1" Background="White"&gt;
+            &lt;Canvas x:Name="GameCanvas" Focusable="True"
+                    Width="{Binding CanvasWidth, Mode=OneWayToSource}"
+                    Height="{Binding CanvasHeight, Mode=OneWayToSource}"&gt;
+            &lt;/Canvas&gt;
+        &lt;/Border&gt;
+    &lt;/DockPanel&gt;
+&lt;/Window&gt;</code></pre></div> --&gt;</code></pre></div>
+      <div id="eve-file2" class="file-pane"><pre><code class="language-csharp">using System;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using Menekulj.ViewModel;
+
+namespace Menekulj.WPF
+{
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            DataContextChanged += (s, e) =>
+            {
+                if (e.NewValue is MainViewModel viewModel)
+                {
+                    viewModel.RequestDrawGame += (s, e) => DrawGame();
+                    viewModel.GameOver += (s, msg) => ShowGameOver(msg);
+
+                    DrawGame();
+                }
+            };
+
+            Loaded += (s, e) =>
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.WindowLoadedCommand.Execute(null);
+                }
+                GameCanvas.Focus();
+            };
+        }
+
+        private void DrawGame()
+        {
+            if (DataContext is not MainViewModel viewModel) return;
+
+            GameCanvas.Children.Clear();
+
+            int gridSize = viewModel.GridSize;
+            double canvasWidth = GameCanvas.ActualWidth;
+            double canvasHeight = GameCanvas.ActualHeight;
+
+            if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
+            double cellSize = Math.Min(canvasWidth / gridSize, canvasHeight / gridSize);
+            double gridWidth = cellSize * gridSize;
+            double gridHeight = cellSize * gridSize;
+            double offsetX = (canvasWidth - gridWidth) / 2;
+            double offsetY = (canvasHeight - gridHeight) / 2;
+
+            for (int y = 0; y < gridSize; y++)
+            {
+                for (int x = 0; x < gridSize; x++)
+                {
+                    Rectangle cell = new Rectangle
+                    {
+                        Width = cellSize,
+                        Height = cellSize,
+                        Fill = Brushes.White,
+                        Stroke = Brushes.LightGray,
+                        StrokeThickness = 0.5
+                    };
+
+                    Canvas.SetLeft(cell, offsetX + x * cellSize);
+                    Canvas.SetTop(cell, offsetY + y * cellSize);
+
+                    if (viewModel.Mines.Contains(new System.Drawing.Point(x, y)))
+                    {
+                        cell.Fill = Brushes.Black;
+                    }
+
+                    GameCanvas.Children.Add(cell);
+                }
+            }
+
+            foreach (var enemy in viewModel.Enemies)
+            {
+                Rectangle enemyRect = new Rectangle
+                {
+                    Width = cellSize,
+                    Height = cellSize,
+                    Fill = Brushes.Red
+                };
+
+                Canvas.SetLeft(enemyRect, offsetX + enemy.X * cellSize);
+                Canvas.SetTop(enemyRect, offsetY + enemy.Y * cellSize);
+                GameCanvas.Children.Add(enemyRect);
+            }
+
+            var player = viewModel.Player;
+            Rectangle playerRect = new Rectangle
+            {
+                Width = cellSize,
+                Height = cellSize,
+                Fill = Brushes.Green
+            };
+
+            Canvas.SetLeft(playerRect, offsetX + player.X * cellSize);
+            Canvas.SetTop(playerRect, offsetY + player.Y * cellSize);
+            GameCanvas.Children.Add(playerRect);
+
+            if (viewModel.IsPaused && !viewModel.IsGameOver)
+            {
+                TextBlock pauseText = new TextBlock
+                {
+                    Text = "SZÜNET",
+                    FontSize = 24,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Black,
+                    Background = new SolidColorBrush(Color.FromArgb(200, 211, 211, 211))
+                };
+
+                pauseText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                pauseText.Arrange(new Rect(pauseText.DesiredSize));
+
+                Canvas.SetLeft(pauseText, (canvasWidth - pauseText.ActualWidth) / 2);
+                Canvas.SetTop(pauseText, 10);
+                GameCanvas.Children.Add(pauseText);
+            }
+        }
+
+        private void ShowGameOver(string message)
+        {
+            MessageBox.Show(message, "Játék vége", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+}</code></pre></div>
+      <div id="eve-file3" class="file-pane"><pre><code class="language-csharp">using System;
+using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Threading;
+using Menekulj.Model;
+using Menekulj.Persistence;
+
+namespace Menekulj.ViewModel
+{
+    public class MainViewModel : ViewModelBase
+    {
+        private readonly GameLogic _model;
+        private readonly GameStorage _storage;
+        private readonly DispatcherTimer _uiTimer;
+        private string _timeDisplay = "Idő: 0s";
+        private int _selectedMapSize = 11;
+        private bool _isMapSizeSelectorVisible;
+        private double _canvasWidth;
+        private double _canvasHeight;
+
+        public ICommand WindowLoadedCommand { get; }
+        public ICommand? CanvasSizeChangedCommand  { get; }
+        public ICommand MapSizeSelectionChangedCommand { get; }
+
+        public ObservableCollection<int> AvailableMapSizes { get; } = new ObservableCollection<int> { 11, 15, 21 };
+
+        public ICommand NewGameCommand { get; }
+        public ICommand TogglePauseCommand { get; }
+        public ICommand SaveGameCommand { get; }
+        public ICommand LoadGameCommand { get; }
+        public ICommand SelectMapSizeCommand { get; }
+        public ICommand MoveCommand { get; }
+
+        public event EventHandler? RequestDrawGame;
+
+        public string TimeDisplay
+        {
+            get => _timeDisplay;
+            set => SetProperty(ref _timeDisplay, value);
+        }
+
+        public int SelectedMapSize
+        {
+            get => _selectedMapSize;
+            set => SetProperty(ref _selectedMapSize, value);
+        }
+
+        public bool IsMapSizeSelectorVisible
+        {
+            get => _isMapSizeSelectorVisible;
+            set => SetProperty(ref _isMapSizeSelectorVisible, value);
+        }
+
+        public double CanvasWidth
+        {
+            get => _canvasWidth;
+            set
+            {
+                if (SetProperty(ref _canvasWidth, value))
+                {
+                    OnCanvasSizeChanged();
+                }
+            }
+        }
+
+        public double CanvasHeight
+        {
+            get => _canvasHeight;
+            set
+            {
+                if (SetProperty(ref _canvasHeight, value))
+                {
+                    OnCanvasSizeChanged();
+                }
+            }
+        }
+
+        public bool IsPaused => _model.Paused;
+        public bool IsGameOver => _model.GameOver;
+        public bool CanSaveOrLoad => IsPaused && !IsGameOver;
+        public string PauseButtonText => IsPaused ? "Folytatás" : "Szünet";
+
+        public int GridSize => _model.N;
+        public System.Drawing.Point Player => _model.Player;
+        public System.Collections.Generic.List<System.Drawing.Point> Enemies => _model.Enemies;
+        public System.Collections.Generic.HashSet<System.Drawing.Point> Mines => _model.Mines;
+
+        public event EventHandler? GameStateChanged;
+        public event EventHandler<string>? GameOver;
+
+        public MainViewModel()
+        {
+            _storage = new GameStorage();
+            _model = new GameLogic(_storage);
+
+            WindowLoadedCommand = new DelegateCommand(_ => OnWindowLoaded());
+            MapSizeSelectionChangedCommand = new DelegateCommand(_ => OnMapSizeSelectionChanged());
+
+            NewGameCommand = new DelegateCommand(_ => NewGame());
+            TogglePauseCommand = new DelegateCommand(_ => TogglePause());
+            SaveGameCommand = new DelegateCommand(_ => SaveGame());
+            LoadGameCommand = new DelegateCommand(_ => LoadGame());
+            SelectMapSizeCommand = new DelegateCommand(_ => SelectMapSize());
+            MoveCommand = new DelegateCommand(param => Move(param));
+
+            _model.OnStateChanged += (s, e) => Application.Current.Dispatcher.Invoke(() => OnGameStateChanged());
+            _model.OnTimeChanged += (s, e) => Application.Current.Dispatcher.Invoke(() => TimeDisplay = $"Idő: {_model.ElapsedSeconds}s");
+            _model.OnGameOver += (s, msg) => Application.Current.Dispatcher.Invoke(() => OnGameOver(msg));
+
+            _storage.InfoMessage += (title, msg) =>
+                Application.Current.Dispatcher.Invoke(() =>
+                    MessageBox.Show(msg, title, MessageBoxButton.OK, MessageBoxImage.Information));
+
+            _uiTimer = new DispatcherTimer(DispatcherPriority.Background)
+            {
+                Interval = TimeSpan.FromMilliseconds(50)
+            };
+            _uiTimer.Tick += (s, e) => OnUIUpdate();
+            _uiTimer.Start();
+
+            _model.Start();
+        }
+
+        private void OnWindowLoaded()
+        {
+            RequestDrawGame?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnCanvasSizeChanged()
+        {
+            RequestDrawGame?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnMapSizeSelectionChanged()
+        {
+            IsMapSizeSelectorVisible = false;
+        }
+
+        private void OnUIUpdate()
+        {
+            OnPropertyChanged(nameof(IsPaused));
+            OnPropertyChanged(nameof(IsGameOver));
+            OnPropertyChanged(nameof(CanSaveOrLoad));
+            OnPropertyChanged(nameof(PauseButtonText));
+        }
+
+        private void NewGame()
+        {
+            _model.NewGame(SelectedMapSize);
+            OnGameStateChanged();
+        }
+
+        private void TogglePause()
+        {
+            _model.TogglePause();
+            OnPropertyChanged(nameof(IsPaused));
+            OnPropertyChanged(nameof(PauseButtonText));
+            OnPropertyChanged(nameof(CanSaveOrLoad));
+            OnGameStateChanged();
+        }
+
+        private void SaveGame()
+        {
+            if (!CanSaveOrLoad) return;
+
+            try
+            {
+                _model.SaveGame();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Mentés hiba: {ex.Message}", "Hiba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void LoadGame()
+        {
+            if (!CanSaveOrLoad) return;
+
+            try
+            {
+                _model.LoadGame();
+                OnGameStateChanged();
+                OnPropertyChanged(nameof(IsPaused));
+                OnPropertyChanged(nameof(IsGameOver));
+                OnPropertyChanged(nameof(CanSaveOrLoad));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Betöltés hiba: {ex.Message}", "Hiba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void SelectMapSize()
+        {
+            IsMapSizeSelectorVisible = true;
+        }
+
+        private void Move(object? parameter)
+        {
+            if (IsPaused || IsGameOver) return;
+
+            var direction = parameter as string;
+            var movement = direction switch
+            {
+                "Up" => new System.Drawing.Point(0, -1),
+                "Down" => new System.Drawing.Point(0, 1),
+                "Left" => new System.Drawing.Point(-1, 0),
+                "Right" => new System.Drawing.Point(1, 0),
+                _ => System.Drawing.Point.Empty
+            };
+
+            if (movement != System.Drawing.Point.Empty)
+            {
+                _model.MovePlayer(movement);
+            }
+        }
+
+        private void OnGameStateChanged()
+        {
+            OnPropertyChanged(nameof(GridSize));
+            OnPropertyChanged(nameof(Player));
+            OnPropertyChanged(nameof(Enemies));
+            OnPropertyChanged(nameof(Mines));
+            OnPropertyChanged(nameof(IsPaused));
+            OnPropertyChanged(nameof(IsGameOver));
+            OnPropertyChanged(nameof(CanSaveOrLoad));
+            OnPropertyChanged(nameof(PauseButtonText));
+            GameStateChanged?.Invoke(this, EventArgs.Empty);
+            RequestDrawGame?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnGameOver(string message)
+        {
+            OnPropertyChanged(nameof(IsGameOver));
+            OnPropertyChanged(nameof(CanSaveOrLoad));
+            GameOver?.Invoke(this, message);
+        }
+    }
+}</code></pre></div>
+      <div id="eve-file4" class="file-pane"><pre><code class="language-csharp">using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+namespace Menekulj.ViewModel
+{
+    public abstract class ViewModelBase : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected virtual bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (Equals(storage, value)) return false;
+            storage = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+    }
+}</code></pre></div>
+      <div id="eve-file5" class="file-pane"><pre><code class="language-csharp">using System;
+using System.Windows.Input;
+
+namespace Menekulj.ViewModel
+{
+    public class DelegateCommand : ICommand
+    {
+        private readonly Action<object?> _execute;
+        private readonly Func<object?, bool>? _canExecute;
+
+        public event EventHandler? CanExecuteChanged;
+
+        public DelegateCommand(Action<object?> execute) : this(null, execute) { }
+
+        public DelegateCommand(Func<object?, bool>? canExecute, Action<object?> execute)
+        {
+            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+            _canExecute = canExecute;
+        }
+
+        public bool CanExecute(object? parameter)
+        {
+            return _canExecute == null || _canExecute(parameter);
+        }
+
+        public void Execute(object? parameter)
+        {
+            _execute(parameter);
+        }
+
+        public void RaiseCanExecuteChanged()
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+}</code></pre></div>
+      <div id="eve-file6" class="file-pane"><pre><code class="language-csharp">using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using Menekulj.Persistence;
+
+namespace Menekulj.Model
+{
+    public class GameLogic
+    {
+        private readonly Random rnd = new();
+        private readonly IGameDataAccess _dataAccess;
+        public int N { get; private set; } = 11;
+        public Point Player { get; private set; }
+        public List<Point> Enemies { get; private set; } = new();
+        public HashSet<Point> Mines { get; private set; } = new();
+        public int ElapsedSeconds { get; private set; }
+        public bool Paused { get; private set; }
+        public bool GameOver { get; private set; }
+
+        public event EventHandler? OnStateChanged;
+        public event EventHandler? OnTimeChanged;
+        public event EventHandler<string>? OnGameOver;
+
+        private IGameTimer enemyTimer;
+        private IGameTimer clockTimer;
+
+        public GameLogic(IGameDataAccess dataAccess)
+        {
+            _dataAccess = dataAccess ?? throw new ArgumentNullException(nameof(dataAccess));
+            enemyTimer = new GameTimerAggregation();
+            clockTimer = new GameTimerAggregation();
+
+            enemyTimer.Interval = 400;
+            enemyTimer.Elapsed += (s, e) => MoveEnemies();
+            clockTimer.Interval = 1000;
+            clockTimer.Elapsed += (s, e) =>
+            {
+                if (!Paused && !GameOver)
+                {
+                    ElapsedSeconds++;
+                    OnTimeChanged?.Invoke(this, EventArgs.Empty);
+                }
+            };
+        }
+
+        public void Start()
+        {
+            NewGame(N);
+        }
+        
+
+        
+        private void LoadFromPersistenceData(GameData data)
+        {
+            N = data.N;
+            Player = new Point(data.Player.X, data.Player.Y);
+            Enemies = data.Enemies.Select(p => new Point(p.X, p.Y)).ToList();
+            Mines = new HashSet<Point>(data.Mines.Select(p => new Point(p.X, p.Y)));
+            ElapsedSeconds = data.ElapsedSeconds;
+            Paused = true;
+            GameOver = false;
+            OnStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        
+        private GameData ConvertToPersistenceData()
+        {
+            return new GameData
+            {
+                N = N,
+                Player = new Persistence.Position(Player.X, Player.Y),
+                Enemies = Enemies.Select(p => new Persistence.Position(p.X, p.Y)).ToList(),
+                Mines = Mines.Select(p => new Persistence.Position(p.X, p.Y)).ToList(),
+                ElapsedSeconds = ElapsedSeconds
+            };
+        }
+
+        public void NewGame(int size)
+        {
+            N = size;
+            ElapsedSeconds = 0;
+            GameOver = false;
+            Paused = false;
+            Mines.Clear();
+            Enemies.Clear();
+
+            Player = new Point(N / 2, 0);
+            Enemies.Add(new Point(0, N - 1));
+            Enemies.Add(new Point(N - 1, N - 1));
+
+            int mineCount = Math.Max(1, N / 3);
+            while (Mines.Count < mineCount)
+            {
+                var p = new Point(rnd.Next(0, N), rnd.Next(0, N));
+                if (p == Player || Enemies.Contains(p)) continue;
+                Mines.Add(p);
+            }
+
+            enemyTimer.Start();
+            clockTimer.Start();
+            OnStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void MovePlayer(Point delta)
+        {
+            if (Paused || GameOver) return;
+            var newPos = new Point(Player.X + delta.X, Player.Y + delta.Y);
+            if (newPos.X < 0 || newPos.X >= N || newPos.Y < 0 || newPos.Y >= N) return;
+            Player = newPos;
+            CheckCollisions();
+            OnStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void MoveEnemies()
+        {
+            if (Paused || GameOver) return;
+
+            for (int i = Enemies.Count - 1; i >= 0; i--)
+            {
+                var epos = Enemies[i];
+                int dx = Player.X - epos.X;
+                int dy = Player.Y - epos.Y;
+                var newPos = epos;
+                if (Math.Abs(dy) > Math.Abs(dx)) newPos.Y += Math.Sign(dy);
+                else newPos.X += Math.Sign(dx);
+                Enemies[i] = newPos;
+
+                if (newPos == Player)
+                {
+                    GameOver = true;
+                    StopTimers();
+                    OnGameOver?.Invoke(this, "Egy üldöző elkapott — vesztettél.");
+                    return;
+                }
+
+                if (Mines.Contains(newPos)) { Enemies.RemoveAt(i); continue; }
+            }
+
+            if (Enemies.Count == 0)
+            {
+                GameOver = true;
+                StopTimers();
+                OnGameOver?.Invoke(this, "Gratulálok! Nyertél!");
+                return;
+            }
+
+            OnStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void CheckCollisions()
+        {
+            if (Mines.Contains(Player))
+            {
+                GameOver = true;
+                StopTimers();
+                OnGameOver?.Invoke(this, "Beléptél egy aknára — vesztettél.");
+            }
+            else if (Enemies.Any(e => e == Player))
+            {
+                GameOver = true;
+                StopTimers();
+                OnGameOver?.Invoke(this, "Egy üldöző elkapott — vesztettél.");
+            }//igen tudom,hogy 2x ellenöröz, de van néha késés ha csak egyszer ellenörzöm.
+        }
+
+        public void TogglePause()
+        {
+            Paused = !Paused;
+            UpdateTimers();
+        }
+
+        private void UpdateTimers()
+        {
+            if (Paused || GameOver)
+                StopTimers();
+            else
+            {
+                enemyTimer.Start();
+                clockTimer.Start();
+            }
+        }
+
+        private void StopTimers()
+        {
+            enemyTimer.Stop();
+            clockTimer.Stop();
+        }
+
+        public void SaveGame()
+        {
+            var data = ConvertToPersistenceData();
+            _dataAccess.Save(data);
+        }
+
+        public void LoadGame()
+        {
+            var data = _dataAccess.Load();
+            if (data != null)
+            {
+                LoadFromPersistenceData(data);
+            }
+        }
+    }
+}</code></pre></div>
+      <div id="eve-file7" class="file-pane"><pre><code class="language-csharp">using System;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using Menekulj.ViewModel;
+
+
+namespace Menekulj.ViewModel
+{
+    public class GameField : ViewModelBase
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+    }
+}
+
+
+
+</code></pre></div>
+      <div id="eve-file8" class="file-pane"><pre><code class="language-csharp">using System;
+using System.IO;
+using System.Text.Json;
+using System.Linq;
+
+namespace Menekulj.Persistence
+{
+    public class GameStorage : IGameDataAccess
+    {
+        public event Action<string, string>? InfoMessage;
+        
+        private readonly string savePath = Path.Combine(AppContext.BaseDirectory, "savegame.json");
+
+        public void Save(GameData data)
+        {
+            try
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                File.WriteAllText(savePath, JsonSerializer.Serialize(data, options));
+                InfoMessage?.Invoke("Mentés", "Mentés elkészült: savegame.json");
+            }
+            catch (Exception ex)
+            {
+                throw new GameDataException("Mentés sikertelen", ex);
+            }
+        }
+
+        public GameData? Load()
+        {
+            try
+            {
+                if (!File.Exists(savePath))
+                {
+                    throw new GameDataException("Nincs mentésfájl");
+                }
+
+                var json = File.ReadAllText(savePath);
+                var data = JsonSerializer.Deserialize<GameData>(json);
+                if (data == null)
+                {
+                    throw new GameDataException("Hibás mentésfájl formátum");
+                }
+
+                InfoMessage?.Invoke("Betöltés", "Betöltés sikeres.");
+                return data;
+            }
+            catch (GameDataException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new GameDataException("Betöltés sikertelen", ex);
+            }
+        }
+    }
+}</code></pre></div>
+      <div id="eve-file9" class="file-pane"><pre><code class="language-csharp">using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+namespace Menekulj.Persistence
+{
+    public class GameData
+    {
+        public int N { get; set; }
+        public Position Player { get; set; } = new Position(0, 0);
+        public List<Position> Enemies { get; set; } = new();
+        public List<Position> Mines { get; set; } = new();
+        public int ElapsedSeconds { get; set; }
+    }
+    
+}
+
+using System;
+
+namespace Menekulj.Persistence
+{
+    public class GameDataException : Exception
+    {
+        public GameDataException() { }
+        public GameDataException(string message) : base(message) { }
+        public GameDataException(string message, Exception inner) : base(message, inner) { }
+    }
+}</code></pre></div>
       
       <div id="eve-file10" class="file-pane">
         <iframe class="pdf-frame" src="Dokumentacio.pdf" title="Game Documentation">
@@ -314,11 +3251,10 @@ public static class ThreadSafeEventBus
     </div>
   </article>
 
-  <!-- ================= PROJECT 3: THIS WEBSITE ================= -->
   <article class="project-card">
     <div class="project-header">
-      <h2>Portfolio Architecture Code</h2>
-      <p>The code for this webpage, demonstrating clean HTML/CSS structuring and DOM manipulation using vanilla JavaScript.</p>
+      <h2>Zero-Dependency Portfolio Platform</h2>
+      <p>A self-documenting static portfolio utilizing vanilla JavaScript DOM manipulation and custom CSS properties.</p>
     </div>
 
     <div class="ide-container">
@@ -327,18 +3263,231 @@ public static class ThreadSafeEventBus
         <button class="tab-btn" onclick="switchTab(this, 'web-file2')">styles.css</button>
       </div>
       
-      <div id="web-file1" class="file-pane active">
-        <pre><code class="language-html">&lt;!-- ENCODE YOUR FINAL index.html AND PASTE IT HERE --&gt;</code></pre>
-      </div>
+      <div id="eve-file1" class="file-pane active">
+  <iframe class="pdf-frame" src="html.pdf" title="MainWindow XML Code">
+      This browser does not support inline PDFs. Please download the PDF to view it: <a href="html.pdf">Download PDF</a>.
+  </iframe>
+</div>
       <div id="web-file2" class="file-pane">
-        <pre><code class="language-css">/* PASTE FULL styles.css CODE HERE */</code></pre>
+        <pre><code class="language-css"> :root {
+  --bg: #0d1117;
+  --card-bg: #161b22;
+  --card-border: #30363d;
+  --text: #c9d1d9;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --accent-hover: #1f6feb;
+  --code-bg: #1e1e1e;
+  --tab-bg: #181818;
+  --tab-active-bg: #1e1e1e;
+  --tab-border: #2d2d2d;
+}
+
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; 
+}
+
+body { 
+  background-color: var(--bg); 
+  color: var(--text); 
+  padding: 2.5rem 1rem; 
+  line-height: 1.6; 
+}
+
+.container { max-width: 950px; margin: auto; }
+
+header { text-align: center; margin-bottom: 3.5rem; }
+h1 { font-size: 2.4rem; color: #f0f6fc; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 0.5rem; }
+p.subtitle { color: var(--text-muted); font-size: 1.15rem; }
+
+.project-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.project-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--card-border);
+}
+.project-header h2 { font-size: 1.7rem; color: #f0f6fc; font-weight: 600; }
+.project-header p { color: var(--text-muted); font-size: 0.95rem; margin-top: 0.3rem; }
+
+/* Slider Core */
+.slider-wrapper {
+  position: relative;
+  display: block; 
+}
+
+.slides-container {
+  width: 100%;
+  overflow: hidden;
+  padding: 0 45px; 
+}
+
+.nav-btn {
+  position: absolute;
+  top: -4px; 
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  font-size: 1.8rem; 
+  font-weight: 300;
+  transition: all 0.2s ease;
+  z-index: 10;
+  padding: 0;
+  line-height: 1;
+}
+
+.nav-btn:hover { 
+  color: var(--accent); 
+  transform: scale(1.15); 
+}
+
+.nav-btn.prev { left: 0; }
+.nav-btn.next { right: 0; }
+
+.module-title { 
+  font-size: 1.3rem; 
+  color: var(--accent); 
+  font-weight: 600; 
+  margin-bottom: 0.3rem;
+  text-align: center; 
+}
+
+.module-desc { 
+  font-size: 0.9rem; 
+  color: var(--text-muted); 
+  margin-bottom: 1.5rem;
+  text-align: center; 
+}
+
+.slide {
+  display: none;
+  animation: fadeIn 0.6s ease-in-out; 
+}
+.slide.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.module-title { font-size: 1.25rem; color: var(--accent); font-weight: 600; margin-bottom: 0.3rem; }
+.module-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }
+
+.video-wrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  background: #000;
+  border: 1px solid var(--card-border);
+  max-width: 800px; 
+  margin-left: auto;
+  margin-right: auto;
+  pointer-events: none; 
+}
+.video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+.ide-container {
+  border: 1px solid var(--tab-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--code-bg);
+  margin-top: 1rem;
+}
+
+.tab-bar {
+  display: flex;
+  background: var(--tab-bg);
+  border-bottom: 1px solid var(--tab-border);
+  overflow-x: auto;
+  white-space: nowrap;
+  height: 36px;
+}
+
+.tab-bar::-webkit-scrollbar { height: 4px; }
+.tab-bar::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 4px; }
+.tab-bar::-webkit-scrollbar-track { background: var(--tab-bg); }
+
+.tab-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  border-right: 1px solid var(--tab-border);
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  cursor: pointer;
+  transition: 0.2s all;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.tab-btn:hover { color: #f0f6fc; background: rgba(255,255,255,0.03); }
+.tab-btn.active {
+  background: var(--tab-active-bg);
+  color: var(--accent);
+  border-top: 2px solid var(--accent);
+  font-weight: 600;
+}
+
+.file-pane { display: none; }
+.file-pane.active { display: block; }
+
+pre {
+  margin: 0;
+  background: transparent !important;
+  padding: 1rem;
+  overflow-y: auto;
+  max-height: 450px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.dots { text-align: center; margin-top: 1.5rem; }
+.dot {
+  height: 6px; width: 6px; margin: 0 4px;
+  background-color: var(--card-border); border-radius: 50%;
+  display: inline-block; cursor: pointer; transition: all 0.25s ease;
+}
+.dot.active, .dot:hover { background-color: var(--accent); width: 18px; border-radius: 3px; }
+
+.pdf-frame { width: 100%; height: 500px; border: none; background: #fff; }
+
+.video-tab-content {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  background: #000;
+}
+.video-tab-content iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+} */</code></pre>
       </div>
     </div>
   </article>
 
 </div>
 
-<!-- Interactive Engine Logic -->
 <script>
   hljs.highlightAll();
 
