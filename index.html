@@ -35,8 +35,10 @@
           <p class="module-desc">A centralized JSON serialization system that persists game state across sessions and manages complex object lifecycles.</p>
           
           <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/bhfs4qFY6wM?autoplay=1&mute=1&loop=1&controls=0&playlist=bhfs4qFY6wM" allowfullscreen></iframe>
-          </div>
+  <video autoplay loop muted playsinline disablePictureInPicture>
+    <source src="videos/save.mp4" type="video/mp4">
+  </video>
+</div>
 
           <div class="ide-container">
             <div class="tab-bar">
@@ -756,8 +758,10 @@ public class PauseManager : MonoBehaviour
           <p class="module-desc">Screen-space shaders in HLSL built from scratch, using vector and matrix mathematics for real-time visual effects.</p>
           
           <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/yDSVlg0S5Pk?autoplay=1&mute=1&loop=1&controls=0&playlist=yDSVlg0S5Pk" allowfullscreen></iframe>
-          </div>
+  <video autoplay loop muted playsinline disablePictureInPicture>
+    <source src="videos/shader.mp4" type="video/mp4">
+  </video>
+</div>
 
           <div class="ide-container">
             <div class="tab-bar">
@@ -1164,8 +1168,10 @@ public class DatamoshManager : MonoBehaviour
           <p class="module-desc">A custom event bus designed to minimize runtime allocations, enabling seamless communication between independent components.</p>
           
           <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/IQbiOhA6Jxo?autoplay=1&mute=1&loop=1&controls=0&playlist=IQbiOhA6Jxo" allowfullscreen></iframe>
-          </div>
+  <video autoplay loop muted playsinline disablePictureInPicture>
+    <source src="videos/puzzleandinteractive.mp4" type="video/mp4">
+  </video>
+</div>
 
           <div class="ide-container">
             <div class="tab-bar">
@@ -1617,8 +1623,10 @@ public class InnerPlayerControl : MonoBehaviour
           <p class="module-desc">A deterministic grid-based combat state machine integrated seamlessly into the core gameplay loop.</p>
           
           <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/Cm7dK4EW-qc?autoplay=1&mute=1&loop=1&controls=0&playlist=Cm7dK4EW-qc" allowfullscreen></iframe>
-          </div>
+  <video autoplay loop muted playsinline disablePictureInPicture>
+    <source src="videos/table.mp4" type="video/mp4">
+  </video>
+</div>
 
           <div class="ide-container">
             <div class="tab-bar">
@@ -2366,25 +2374,26 @@ public class BoardSquare : MonoBehaviour
         </div>
 
         
+        
         <div class="slide">
           <div class="module-title">Custom Minigames Integration</div>
           <p class="module-desc">Distinct custom minigames designed and programmed to interface with the overarching instance-based architecture.</p>
           
-         
           <div class="gallery-video-wrapper">
-            <iframe id="minigame-player" src="https://www.youtube.com/embed/yDSVlg0S5Pk?autoplay=0&rel=0" allowfullscreen></iframe>
+            <video id="minigame-player" autoplay loop muted playsinline disablePictureInPicture>
+              <source src="videos/basketball.mp4" type="video/mp4">
+            </video>
           </div>
 
-         
           <div class="gallery-grid">
-            <button class="gallery-btn active" onclick="swapVideo(this, 'yDSVlg0S5Pk')">Basketball</button>
-            <button class="gallery-btn" onclick="swapVideo(this, 'qyJfbKN9DJg')">Shapes</button>
-            <button class="gallery-btn" onclick="swapVideo(this, 'Cm7dK4EW-qc')">TableTop</button>
-            <button class="gallery-btn" onclick="swapVideo(this, 'v11-noRNrhM')">Bird</button> <!--this and shaders somewhere else is temperary as youtube had to be a jerk-->
-            <button class="gallery-btn" onclick="swapVideo(this, 'v11-noRNrhM')">Papers</button>
-            <button class="gallery-btn" onclick="swapVideo(this, 'xWtqN2Dag_M')">Delivery</button>
-            <button class="gallery-btn" onclick="swapVideo(this, 'AypkEALSPeY')">Memories</button>
-            <button class="gallery-btn" onclick="swapVideo(this, 'IQbiOhA6Jxo')">Puzzle</button>
+            <button class="gallery-btn active" onclick="swapVideo(this, 'videos/basketball.mp4')">Basketball</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'videos/shapes.mp4')">Shapes</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'videos/table.mp4')">TableTop</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'videos/bird.mp4')">Bird</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'videos/papers.mp4')">Papers</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'videos/delivery.mp4')">Delivery</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'videos/memories.mp4')">Memories</button>
+            <button class="gallery-btn" onclick="swapVideo(this, 'videos/puzzleandinteractive.mp4')">Puzzle</button>
           </div>
         </div>
 
@@ -2408,8 +2417,10 @@ public class BoardSquare : MonoBehaviour
     </div>
     
     <div class="video-wrapper">
-      <iframe src="https://www.youtube.com/embed/EhLh1UU9ZPI?autoplay=1&mute=1&loop=1&controls=0&playlist=EhLh1UU9ZPI" allowfullscreen></iframe>
-    </div>
+  <video autoplay loop muted playsinline disablePictureInPicture>
+    <source src="videos/eva.mp4" type="video/mp4">
+  </video>
+</div>
     
     <p style="text-align: center; margin: 1.5rem 0 0.8rem 0; color: var(--text-muted); font-size: 0.95rem;">
       Core Logic & Architecture:
@@ -3586,13 +3597,14 @@ pre {
   }
 
 
-  function swapVideo(buttonElement, videoId) {
+  function swapVideo(buttonElement, videoFile) {
     const buttons = document.querySelectorAll('.gallery-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
     buttonElement.classList.add('active');
 
     const player = document.getElementById('minigame-player');
-    player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    player.src = videoFile;
+    player.play(); 
   }
 
 </script>
