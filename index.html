@@ -3542,6 +3542,283 @@ pre {
     </div>
   </article>
 
+
+  <article class="project-card">
+    <div class="project-header">
+      <h2>Functional Parsing – Shunting Yard Algorithm</h2>
+      <p>A pure functional implementation of Dijkstra's Shunting Yard algorithm, demonstrating strong proficiency in Haskell, pattern matching, recursion, and immutable data structures.</p>
+    </div>
+
+    <div class="ide-container">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab(this, 'hsk-file1')">ShuntingYard.hs</button>
+      </div>
+      
+      <div id="hsk-file1" class="file-pane active">
+        <pre><code class="language-haskell">module NagyBead where
+
+import Data.Either
+import Data.Maybe
+import Text.Read (readMaybe)
+import Data.Char
+import Data.List 
+
+
+
+
+data Dir = InfixL | InfixR deriving (Eq, Show, Ord)
+data Tok a 
+    = BrckOpen 
+    | BrckClose 
+    | TokLit a 
+    | TokBinOp (a -> a -> a) Char Int Dir 
+    | TokFun (a -> a) String  -- New constructor for functions
+
+instance Show a => Show (Tok a) where
+    show BrckOpen = "BrckOpen"
+    show BrckClose = "BrckClose"
+    show (TokLit a) = "TokLit " ++ show a
+    show (TokBinOp _ operator erosseg irany) = "TokBinOp " ++ show operator ++ " " ++ show erosseg ++ " " ++ show irany
+    show (TokFun _ name) = "TokFun " ++ name  -- Show for functions
+
+instance Eq a => Eq (Tok a) where
+    BrckOpen == BrckOpen = True
+    BrckClose == BrckClose = True
+    TokLit a == TokLit b = a == b
+    TokBinOp _ op1 er1 ir1 == TokBinOp _ op2 er2 ir2 = op1 == op2 && er1 == er2 && ir1 == ir2
+    TokFun _ name1 == TokFun _ name2 = name1 == name2  -- Equality for functions
+    _ == _ = False
+
+type OperatorTable a = [(Char, (a -> a -> a, Int, Dir))]
+
+tAdd, tMinus, tMul, tDiv, tPow :: (Floating a) => Tok a
+tAdd = TokBinOp (+) '+' 6 InfixL
+tMinus = TokBinOp (-) '-' 6 InfixL
+tMul = TokBinOp (*) '*' 7 InfixL
+tDiv = TokBinOp (/) '/' 7 InfixL
+tPow = TokBinOp (**) '^' 8 InfixR
+
+operatorTable :: (Floating a) => OperatorTable a
+operatorTable =
+    [ ('+', ((+), 6, InfixL))
+    , ('-', ((-), 6, InfixL))
+    , ('*', ((*), 7, InfixL))
+    , ('/', ((/), 7, InfixL))
+    , ('^', ((**), 8, InfixR))
+    ]
+
+
+operatorFromChar :: OperatorTable a -> Char -> Maybe (Tok a)
+operatorFromChar [] _ = Nothing
+operatorFromChar ((key, (op, pre, asso)):xs) kara
+  | kara == key = Just (TokBinOp op key pre asso)
+  | otherwise = operatorFromChar xs kara
+
+
+getOp :: (Floating a) => Char -> Maybe (Tok a)
+getOp = operatorFromChar operatorTable
+
+
+parseTokens :: Read a => OperatorTable a -> String -> Maybe [Tok a]
+parseTokens optable s = tokener optable (words s)
+
+
+csakzarojel = all (`elem` " ()")
+
+
+zarojelTokens = map convert . filter (`elem` " ()")
+  where
+    convert '(' = BrckOpen
+    convert ')' = BrckClose
+
+
+egyKar [_] = True
+egyKar _ = False
+
+
+karOP optable c = operatorFromChar optable c
+
+
+tokMaybe (Just a) = a
+
+
+karTokens optable x
+    | csakzarojel x = Just (zarojelTokens x)
+    | egyKar x && isJust (karOP optable $ head x) = Just [tokMaybe (karOP optable $ head x)]
+    | otherwise = case readMaybe x of
+        Just n -> Just [TokLit n]   ---ezt nagyon
+        Nothing -> Nothing
+
+
+tokener optable = go 0
+  where
+    maxTokens = 90000
+    go _ [] = Just []
+    go count (x:xs)
+      | count > maxTokens = Nothing 
+      | otherwise = do
+          current <- karTokens optable x      
+          rest <- go (count + 1) xs
+          return (current ++ rest)
+
+
+          
+parse :: String -> Maybe [Tok Double]
+parse = parseTokens operatorTable
+
+
+shuntingYardBasic :: [Tok a] -> ([a], [Tok a])
+shuntingYardBasic input = inputKezeles input ([], [])
+
+
+inputKezeles tokens state = case tokens of
+    [] -> state
+    (BrckClose : rest) -> zarojelkezeles rest state        
+    (tok : rest) -> tokenKezeles tok rest state
+
+
+zarojelkezeles rest (lits, BrckOpen : ops) = inputKezeles rest (lits, ops)
+zarojelkezeles rest (a : b : lits, op : ops) = 
+    let newState = (operatorRa op a b : lits, ops)
+    in zarojelkezeles rest newState
+
+
+tokenKezeles tok rest state@(lits, ops)
+    | nyitottzarojel tok = inputKezeles rest (lits, tok : ops)
+    | literalis tok = inputKezeles rest (literalKiszedes tok : lits, ops)
+    | binaris tok = inputKezeles rest (lits, tok : ops)
+    | otherwise = state
+
+
+operatorRa (TokBinOp f _ _ _) x y = f y x
+
+
+nyitottzarojel BrckOpen = True
+nyitottzarojel _ = False
+
+
+literalis (TokLit _) = True
+literalis _ = False
+
+
+binaris (TokBinOp _ _ _ _) = True
+binaris _ = False
+
+
+literalKiszedes (TokLit x) = x
+
+
+parseAndEval :: (String -> Maybe [Tok a]) -> ([Tok a] -> ([a], [Tok a])) -> String -> Maybe ([a], [Tok a])
+parseAndEval parse eval input = maybe Nothing (Just . eval) (parse input)
+
+syNoEval :: String -> Maybe ([Double], [Tok Double])
+syNoEval = parseAndEval parse shuntingYardBasic
+
+syEvalBasic :: String -> Maybe ([Double], [Tok Double])
+syEvalBasic = parseAndEval parse (\t -> shuntingYardBasic $ BrckOpen : (t ++ [BrckClose]))
+
+
+shuntingYardPrecedence :: [Tok a] -> ([a], [Tok a])
+shuntingYardPrecedence input = inputKezeles' input ([], [])
+
+
+inputKezeles' tokens state = case tokens of
+    [] -> state
+    (BrckClose : rest) -> zarojelkezeles' rest state 
+    (tok : rest) -> tokenKezeles' tok rest state
+
+
+zarojelkezeles' rest (lits, BrckOpen : ops) = inputKezeles' rest (lits, ops)
+zarojelkezeles' rest (a : b : lits, f : ops) = 
+    let newState = (operatorRa' f b a : lits, ops)             
+    in zarojelkezeles' rest newState
+
+
+tokenKezeles' tok rest state@(lits, ops)
+    | nyitottzarojel' tok = inputKezeles' rest (lits, tok : ops)
+    | literalis' tok = inputKezeles' rest (literalKiszedes' tok : lits, ops)
+    | binaris' tok = inputKezeles' rest (operatorKezeles tok (lits, ops))
+    | otherwise = state
+
+
+operatorKezeles op@(TokBinOp _ _ strength _) (lits@(a : b : litsRest), ops@(op'@(TokBinOp _ _ strength' _) : opsRest))
+    | strength < strength' || (strength == strength' && balras op) = 
+        let newState = (operatorRa' op' b a : litsRest, opsRest)
+        in operatorKezeles op newState
+operatorKezeles op (lits, ops) = (lits, op : ops)
+
+
+operatorRa' (TokBinOp f _ _ _) x y = f x y
+
+
+nyitottzarojel' BrckOpen = True
+nyitottzarojel' _ = False
+
+
+literalis' (TokLit _) = True
+literalis' _ = False
+
+
+binaris' (TokBinOp _ _ _ _) = True
+binaris' _ = False
+
+
+literalKiszedes' (TokLit x) = x
+
+
+balras (TokBinOp _ _ _ InfixL) = True
+balras _ = False
+
+
+
+
+
+syEvalPrecedence :: String -> Maybe ([Double], [Tok Double])
+syEvalPrecedence = parseAndEval parse (\t -> shuntingYardPrecedence $ BrckOpen : (t ++ [BrckClose]))
+
+
+
+data ShuntingYardError
+    = OperatorOrClosingParenExpected
+    | LiteralOrOpeningParenExpected
+    | NoClosingParen
+    | NoOpeningParen
+    | ParseError
+    deriving (Eq, Show)
+
+
+type ShuntingYardResult a = Either ShuntingYardError a
+
+
+type FunctionTable a = [(String, a -> a)]
+
+functionTable :: (RealFrac a, Floating a) => FunctionTable a 
+functionTable = 
+    [ ("sin", sin) 
+    , ("cos", cos) 
+    , ("log", log) 
+    , ("exp", exp) 
+    , ("sqrt", sqrt) 
+    , ("round", (\x -> fromIntegral (round x :: Integer))) 
+    ] 
+ 
+tSin, tCos, tLog, tExp, tSqrt :: Floating a => Tok a 
+tSin = TokFun sin "sin" 
+tCos = TokFun cos "cos" 
+tLog = TokFun log "log" 
+tExp = TokFun exp "exp" 
+tSqrt = TokFun sqrt "sqrt" 
+ 
+tRound :: (Floating a, RealFrac a) => Tok a 
+tRound = TokFun (\x -> fromIntegral (round x :: Integer)) "round"
+
+
+</code></pre>
+      </div>
+    </div>
+  </article>
+
+
 </div>
 
 <script>
